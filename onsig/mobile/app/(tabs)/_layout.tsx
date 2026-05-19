@@ -12,6 +12,7 @@ import { Icon } from '@/components/icon'
 
 const TABS: { name: string; icon: string; label: string }[] = [
   { name: 'index', icon: 'grid-view', label: 'Özet' },
+  { name: 'contracts', icon: 'description', label: 'Sözleşmeler' },
   { name: 'profile', icon: 'account-circle', label: 'Profil' },
 ]
 
@@ -54,6 +55,7 @@ export default function TabsLayout() {
       )}
     >
       <Tabs.Screen name="index" />
+      <Tabs.Screen name="contracts" />
       <Tabs.Screen name="profile" />
     </Tabs>
   )
