@@ -1,0 +1,72 @@
+{
+  "//": "EAS Build / Submit profiles. Three rails:",
+  "//1": "  development — internal dev client build (includes dev-menu, Metro)",
+  "//2": "  preview     — internal QA build, distributable via QR/TestFlight Internal",
+  "//3": "  production  — store-ready release build (App Store / Play Store)",
+  "//4": "",
+  "//5": "Production builds use the same EXPO_PUBLIC_API_URL as the .env.local",
+  "//6": "(https://onsig-prod.fly.dev/api). To point a build at staging or a",
+  "//7": "feature flag environment, override `env.EXPO_PUBLIC_API_URL` here.",
+  "cli": {
+    "version": ">= 12.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "channel": "development",
+      "ios": {
+        "simulator": true,
+        "resourceClass": "m-medium"
+      },
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleDebug"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://onsig-prod.fly.dev/api"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "channel": "preview",
+      "ios": {
+        "resourceClass": "m-medium"
+      },
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://onsig-prod.fly.dev/api"
+      }
+    },
+    "production": {
+      "channel": "production",
+      "ios": {
+        "resourceClass": "m-medium"
+      },
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://onsig-prod.fly.dev/api"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "//": "Required: ascAppId + appleId or appleTeamId. Fill these once you have the App Store Connect entry.",
+        "appleId": "",
+        "ascAppId": "",
+        "appleTeamId": ""
+      },
+      "android": {
+        "//": "Required: serviceAccountKeyPath pointing to your Google Play service-account JSON.",
+        "serviceAccountKeyPath": "./play-service-account.json",
+        "track": "internal"
+      }
+    }
+  }
+}

@@ -1,24 +1,32 @@
 /**
- * Sözleşme detay (Contract detail).
+ * Sözleşme detay — premium redesign.
  *
- * Source design: `stitch_onsig.../s_zle_me_detay_premium`.
- *
- * Top-level layout:
- *   - Custom header with back + share/options
- *   - Title + template label + status badge
- *   - Rendered contract text in a scrollable card (read-only here; the editor
- *     is Phase 3+ work)
- *   - Sign sessions list (recipients) with status + signed-at timestamp
- *   - Bottom CTA reserved for Phase 3 ("Yeni İmza Davetiyesi Gönder")
+ * Composition (top → bottom):
+ *   1. Translucent header (back + menu, both circular icon buttons).
+ *   2. Title hero card — status pill, big title, template label, three
+ *      meta stats (oluşturulma / son güncelleme / imza ilerleme bar'ı).
+ *   3. İmzacılar — premium row with gradient avatar, name, channel
+ *      (email/phone/role) and a status pill + timestamp.
+ *   4. Sözleşme metni — rendered text in a white card with monospace-leaning
+ *      typography, scrollable selectable text.
+ *   5. Sticky bottom CTA bar — primary "İmza Davetiyesi Gönder" + secondary
+ *      "PDF". (Phase 3 will wire these to actions.)
  */
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native'
+import { Pressable, ScrollView, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { Avatar } from '@/components/avatar'
+import { Button } from '@/components/button'
+import { Card } from '@/components/card'
 import { Icon } from '@/components/icon'
+import { SectionHeader } from '@/components/section-header'
+import { Skeleton } from '@/components/skeleton'
 import { StatusBadge } from '@/components/status-badge'
 import { relativeTime, shortDate } from '@/lib/format'
+import { haptic } from '@/lib/haptic'
 import { useContract, type SignSession } from '@/lib/queries/contracts'
+import { shadows } from '@/lib/shadow'
 
 export default function ContractDetail() {
   const { id: idParam } = useLocalSearchParams<{ id: string }>()
@@ -29,119 +37,196 @@ export default function ContractDetail() {
 
   const c = data?.contract
   const sessions = data?.signSessions ?? []
-
   const signedCount = sessions.filter((s) => s.status === 'imzalandi').length
+  const totalSessions = sessions.length
+  const progress = totalSessions > 0 ? Math.round((signedCount / totalSessions) * 100) : 0
 
   return (
-    <View className="flex-1 bg-background">
+    <View className="flex-1 bg-canvas">
       {/* Header */}
       <View
-        className="px-container-padding-mobile pb-3 border-b border-outline-variant/20 bg-background flex-row items-center gap-2"
-        style={{ paddingTop: insets.top + 12 }}
+        className="px-5 pb-3 flex-row items-center justify-between bg-canvas"
+        style={{ paddingTop: insets.top + 10 }}
       >
         <Pressable
-          onPress={() => router.back()}
-          className="w-10 h-10 items-center justify-center active:opacity-70 -ml-2"
+          onPress={() => {
+            haptic.tap()
+            router.back()
+          }}
+          className="w-10 h-10 rounded-full bg-card border border-hairline items-center justify-center active:opacity-70"
+          style={shadows.xs}
         >
-          <Icon name="arrow_back" size={22} color="#191c1d" />
+          <Icon name="arrow-back" size={20} color="#0f0f12" />
         </Pressable>
-        <Text className="flex-1 font-inter-bold text-[16px] text-primary tracking-tight" numberOfLines={1}>
-          {c?.title || c?.template?.label || 'Sözleşme'}
+        <Text className="font-inter-semibold text-[13px] text-ink-500 uppercase tracking-[1.4px]">
+          Sözleşme Detayı
         </Text>
-        <Pressable className="w-10 h-10 items-center justify-center active:opacity-70">
-          <Icon name="more-vert" size={22} color="#191c1d" />
+        <Pressable
+          className="w-10 h-10 rounded-full bg-card border border-hairline items-center justify-center active:opacity-70"
+          style={shadows.xs}
+        >
+          <Icon name="more-vert" size={20} color="#0f0f12" />
         </Pressable>
       </View>
 
       {isError ? (
-        <View className="p-4">
-          <Text className="font-inter text-body-sm text-error">
-            {(error as Error)?.message || 'Sözleşme yüklenemedi.'}
-          </Text>
+        <View className="px-5 pt-4">
+          <Card padded="lg" elevation="sm">
+            <View className="flex-row items-center gap-3">
+              <View className="w-10 h-10 rounded-xl bg-danger-50 items-center justify-center">
+                <Icon name="error-outline" size={20} color="#dc2626" />
+              </View>
+              <View className="flex-1">
+                <Text className="font-inter-semibold text-[14px] text-danger-700">
+                  Sözleşme yüklenemedi
+                </Text>
+                <Text className="font-inter text-[12px] text-ink-500 mt-0.5">
+                  {(error as Error)?.message || 'Bağlantı sorunu olabilir.'}
+                </Text>
+              </View>
+            </View>
+          </Card>
         </View>
       ) : isLoading || !c ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color="#6b38d4" />
-        </View>
+        <DetailSkeleton />
       ) : (
-        <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 140 }}>
-          {/* Title block */}
-          <View className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-4 mb-4">
-            <View className="flex-row items-center gap-2 mb-2">
-              <StatusBadge status={c.status} size="md" />
-              {c.template?.label ? (
-                <Text className="font-geist-semibold text-[11px] text-on-surface-variant/70 uppercase tracking-wider">
-                  · {c.template.label}
-                </Text>
+        <>
+          <ScrollView
+            contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 140, paddingTop: 8 }}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Hero card */}
+            <Card padded="lg" elevation="sm" className="mb-6">
+              <View className="flex-row items-center gap-2 mb-4">
+                <StatusBadge status={c.status} size="md" />
+                {c.template?.label ? (
+                  <Text className="font-inter text-[12px] text-ink-500" numberOfLines={1}>
+                    · {c.template.label}
+                  </Text>
+                ) : null}
+              </View>
+              <Text className="font-inter-bold text-h1 text-ink-900 tracking-tight leading-tight">
+                {c.title || c.template?.label || 'Adsız sözleşme'}
+              </Text>
+
+              {/* Progress strip */}
+              {totalSessions > 0 ? (
+                <View className="mt-5">
+                  <View className="flex-row items-center justify-between mb-2">
+                    <Text className="font-inter-semibold text-[12px] text-ink-700">
+                      İmza ilerlemesi
+                    </Text>
+                    <Text className="font-inter-bold text-[13px] text-ink-900">
+                      {signedCount}/{totalSessions}
+                      <Text className="font-inter text-[11px] text-ink-400">  · %{progress}</Text>
+                    </Text>
+                  </View>
+                  <View className="h-2 rounded-full bg-subtle overflow-hidden">
+                    <View
+                      className="h-full rounded-full bg-success-500"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </View>
+                </View>
               ) : null}
+
+              {/* Meta row */}
+              <View className="flex-row gap-3 mt-5 pt-5 border-t border-hairline">
+                <MetaCell
+                  icon="event"
+                  value={shortDate(c.createdAt)}
+                  label="Oluşturulma"
+                />
+                <View className="w-px h-10 bg-hairline self-center" />
+                <MetaCell
+                  icon="update"
+                  value={relativeTime(c.updatedAt)}
+                  label="Son güncelleme"
+                />
+              </View>
+            </Card>
+
+            {/* Sessions */}
+            <SectionHeader title="İmzacılar" count={sessions.length} />
+            <View className="gap-2 mb-6">
+              {sessions.length === 0 ? (
+                <Card padded="lg" elevation="flat" className="items-center py-8">
+                  <View className="w-12 h-12 rounded-2xl bg-subtle items-center justify-center mb-3">
+                    <Icon name="person-add" size={22} color="#9097a3" />
+                  </View>
+                  <Text className="font-inter-semibold text-[14px] text-ink-700">
+                    Henüz imzacı atanmamış
+                  </Text>
+                  <Text className="font-inter text-[12px] text-ink-400 mt-1 text-center">
+                    Aşağıdaki butondan imza davetiyesi gönderebilirsin.
+                  </Text>
+                </Card>
+              ) : (
+                sessions.map((s) => <SessionRow key={s.id} session={s} />)
+              )}
             </View>
-            <Text className="font-inter-bold text-[20px] text-primary tracking-tight">
-              {c.title || c.template?.label || 'Adsız sözleşme'}
-            </Text>
-            <View className="flex-row items-center gap-3 mt-3">
-              <Stat icon="event" value={shortDate(c.createdAt)} label="Oluşturulma" />
-              <View className="w-px h-8 bg-outline-variant/40" />
-              <Stat icon="update" value={relativeTime(c.updatedAt)} label="Son güncelleme" />
-              <View className="w-px h-8 bg-outline-variant/40" />
-              <Stat
-                icon="task_alt"
-                value={`${signedCount}/${sessions.length || '—'}`}
-                label="İmza"
+
+            {/* Rendered contract preview */}
+            <SectionHeader title="Sözleşme Metni" />
+            <Card padded="lg" elevation="sm">
+              <Text
+                className="font-inter text-[13px] text-ink-700"
+                style={{ lineHeight: 22 }}
+                selectable
+              >
+                {c.renderedText || 'Sözleşme metni henüz oluşturulmadı.'}
+              </Text>
+            </Card>
+          </ScrollView>
+
+          {/* Sticky bottom CTA */}
+          <View
+            className="absolute left-0 right-0 bottom-0 bg-canvas border-t border-hairline px-5 pt-3 flex-row gap-2"
+            style={{ paddingBottom: insets.bottom + 12 }}
+          >
+            <Button
+              label="PDF"
+              variant="outline"
+              size="md"
+              iconLeft="picture-as-pdf"
+              fullWidth={false}
+              className="px-4"
+              onPress={() => {
+                haptic.light()
+                // TODO Phase 3: download PDF
+              }}
+            />
+            <View className="flex-1">
+              <Button
+                label="İmza Davetiyesi Gönder"
+                variant="brand"
+                size="md"
+                iconLeft="send"
+                onPress={() => {
+                  haptic.medium()
+                  // TODO Phase 3: open invite modal
+                }}
               />
             </View>
           </View>
-
-          {/* Sign sessions */}
-          <SectionHeading title="İmza Oturumları" count={sessions.length} />
-          <View className="gap-2 mb-6">
-            {sessions.length === 0 ? (
-              <View className="bg-surface-container-lowest/50 border border-dashed border-outline-variant/40 rounded-xl py-6 px-4 items-center">
-                <Icon name="person-add" size={22} color="#9ca3af" />
-                <Text className="font-inter text-body-sm text-on-surface-variant/70 mt-2 text-center">
-                  Henüz imzacı atanmamış.
-                </Text>
-              </View>
-            ) : (
-              sessions.map((s) => <SessionRow key={s.id} session={s} />)
-            )}
-          </View>
-
-          {/* Rendered contract preview */}
-          <SectionHeading title="Sözleşme Metni" />
-          <View className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-4">
-            <Text className="font-inter text-body-sm text-on-surface leading-relaxed" selectable>
-              {c.renderedText || 'Sözleşme metni henüz oluşturulmadı.'}
-            </Text>
-          </View>
-        </ScrollView>
+        </>
       )}
     </View>
   )
 }
 
-function SectionHeading({ title, count }: { title: string; count?: number }) {
-  return (
-    <View className="flex-row items-center gap-2 mb-3">
-      <Text className="font-inter-semibold text-[15px] text-primary tracking-tight">{title}</Text>
-      {typeof count === 'number' && count > 0 ? (
-        <View className="px-2 py-0.5 bg-secondary/10 rounded-full">
-          <Text className="font-geist-semibold text-[9px] text-secondary uppercase">{count}</Text>
-        </View>
-      ) : null}
-    </View>
-  )
-}
+// ─── Subcomponents ───────────────────────────────────────────────────────
 
-function Stat({ icon, value, label }: { icon: string; value: string; label: string }) {
+function MetaCell({ icon, value, label }: { icon: string; value: string; label: string }) {
   return (
     <View className="flex-1">
-      <View className="flex-row items-center gap-1">
-        <Icon name={icon} size={14} color="#4c4546" />
-        <Text className="font-inter-semibold text-[12px] text-primary" numberOfLines={1}>
+      <View className="flex-row items-center gap-1.5">
+        <Icon name={icon} size={14} color="#6b7280" />
+        <Text className="font-inter-semibold text-[12px] text-ink-900" numberOfLines={1}>
           {value}
         </Text>
       </View>
-      <Text className="font-geist text-[9px] text-on-surface-variant/60 uppercase tracking-wider mt-0.5">
+      <Text className="font-inter text-[10px] text-ink-400 mt-1 uppercase tracking-wider">
         {label}
       </Text>
     </View>
@@ -149,36 +234,67 @@ function Stat({ icon, value, label }: { icon: string; value: string; label: stri
 }
 
 function SessionRow({ session }: { session: SignSession }) {
-  const initials = (session.recipientName || '?').trim().slice(0, 1).toUpperCase()
-  const isDone = session.status === 'imzalandi'
+  const subline =
+    session.recipientEmail ||
+    session.recipientPhone ||
+    (session.role ? session.role.toUpperCase() : 'İmzacı')
   return (
-    <View className="bg-surface-container-lowest border border-outline-variant/30 rounded-xl px-3.5 py-3 flex-row items-center gap-3">
-      <View
-        className="w-10 h-10 rounded-2xl items-center justify-center"
-        style={{ backgroundColor: isDone ? '#4edea322' : '#8455ef22' }}
-      >
-        <Text
-          className="font-inter-bold text-[14px]"
-          style={{ color: isDone ? '#005236' : '#6b38d4' }}
-        >
-          {initials}
-        </Text>
-      </View>
+    <View
+      className="bg-card border border-hairline rounded-2xl p-3.5 flex-row items-center gap-3"
+      style={shadows.sm}
+    >
+      <Avatar
+        name={session.recipientName || session.role}
+        size="md"
+        status={
+          session.status === 'imzalandi'
+            ? 'signed'
+            : session.status === 'bekliyor'
+              ? 'pending'
+              : null
+        }
+      />
       <View className="flex-1">
-        <Text className="font-inter-semibold text-[13px] text-primary" numberOfLines={1}>
-          {session.recipientName || 'İsimsiz'}
+        <Text className="font-inter-semibold text-[14px] text-ink-900" numberOfLines={1}>
+          {session.recipientName || 'İsimsiz alıcı'}
         </Text>
-        <Text className="font-inter text-[11px] text-on-surface-variant/70" numberOfLines={1}>
-          {session.recipientEmail || session.recipientPhone || session.role}
+        <Text className="font-inter text-[12px] text-ink-500 mt-0.5" numberOfLines={1}>
+          {subline}
         </Text>
       </View>
-      <View className="items-end">
+      <View className="items-end gap-1">
         <StatusBadge status={session.status} />
         {session.signedAt ? (
-          <Text className="font-geist text-[10px] text-on-surface-variant/60 mt-1">
+          <Text className="font-inter text-[10px] text-ink-400">
             {relativeTime(session.signedAt)}
           </Text>
         ) : null}
+      </View>
+    </View>
+  )
+}
+
+function DetailSkeleton() {
+  return (
+    <View className="px-5 pt-2 gap-4">
+      <View
+        className="bg-card border border-hairline rounded-2xl p-5 gap-3"
+        style={shadows.sm}
+      >
+        <Skeleton width="35%" height={20} rounded="full" />
+        <Skeleton width="80%" height={20} rounded="md" />
+        <Skeleton width="60%" height={14} rounded="md" />
+        <View className="h-4" />
+        <Skeleton width="100%" height={8} rounded="full" />
+        <View className="flex-row gap-4 mt-3">
+          <Skeleton width="40%" height={32} rounded="md" />
+          <Skeleton width="40%" height={32} rounded="md" />
+        </View>
+      </View>
+      <Skeleton width="40%" height={14} rounded="md" />
+      <View className="gap-2">
+        <Skeleton width="100%" height={68} rounded="xl" />
+        <Skeleton width="100%" height={68} rounded="xl" />
       </View>
     </View>
   )

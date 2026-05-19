@@ -1,19 +1,35 @@
 /**
- * Tabs layout — floating glass bottom navigation as per DESIGN.md
- * "Floating Navigation" section.
+ * Tabs layout — modern enterprise bottom navigation.
  *
- * Phase 1 keeps just two tabs (Özet + Profil); the rest land in Phase 2.
+ * Look: white floating pill with a soft elevation, active tab gets a pale
+ * brand pill behind it (Linear-style), inactive tabs render as icon-only.
+ * No glassmorphism — the bar stays opaque so labels never compete with the
+ * content underneath.
+ *
+ * Layout choices:
+ *   • Sits 18px above the safe-area bottom inset.
+ *   • Each tab is the same width (`flex: 1`) so the pill aligns to the tab
+ *     centre regardless of label length.
+ *   • Tapping triggers a subtle haptic "selection" pulse.
  */
 import { Tabs } from 'expo-router'
 import { Pressable, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { Icon } from '@/components/icon'
+import { Icon, type MaterialIconName } from '@/components/icon'
+import { haptic } from '@/lib/haptic'
+import { shadows } from '@/lib/shadow'
 
-const TABS: { name: string; icon: string; label: string }[] = [
-  { name: 'index', icon: 'grid-view', label: 'Özet' },
-  { name: 'contracts', icon: 'description', label: 'Sözleşmeler' },
-  { name: 'profile', icon: 'account-circle', label: 'Profil' },
+interface TabMeta {
+  name: string
+  icon: MaterialIconName
+  label: string
+}
+
+const TABS: TabMeta[] = [
+  { name: 'index',     icon: 'space-dashboard', label: 'Özet' },
+  { name: 'contracts', icon: 'description',     label: 'Sözleşmeler' },
+  { name: 'profile',   icon: 'person',          label: 'Profil' },
 ]
 
 export default function TabsLayout() {
@@ -24,11 +40,15 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: { display: 'none' },
+        sceneStyle: { backgroundColor: '#f6f7fb' },
       }}
       tabBar={({ state, navigation }) => (
         <View
-          className="absolute left-5 right-5 flex-row items-center justify-around bg-surface-container-lowest/90 border border-outline-variant/30 rounded-3xl shadow-floating"
-          style={{ bottom: insets.bottom + 12, height: 64 }}
+          className="absolute left-5 right-5 flex-row items-center bg-card border border-hairline rounded-full px-1.5"
+          style={[
+            shadows.lg,
+            { bottom: insets.bottom + 14, height: 64 },
+          ]}
         >
           {state.routes.map((route, i) => {
             const meta = TABS.find((t) => t.name === route.name)
@@ -37,17 +57,32 @@ export default function TabsLayout() {
             return (
               <Pressable
                 key={route.key}
-                onPress={() => navigation.navigate(route.name)}
-                className="flex-1 items-center justify-center active:opacity-70"
+                onPress={() => {
+                  if (!focused) {
+                    haptic.tap()
+                    navigation.navigate(route.name)
+                  }
+                }}
+                className="flex-1 items-center justify-center active:opacity-80"
+                style={{ height: '100%' }}
               >
-                <Icon name={meta.icon} size={24} color={focused ? '#6b38d4' : '#9ca3af'} />
-                <Text
-                  className={`font-geist-semibold text-[9px] tracking-widest uppercase mt-1 ${
-                    focused ? 'text-secondary' : 'text-on-surface-variant/50'
+                <View
+                  className={`flex-row items-center justify-center rounded-full ${
+                    focused ? 'bg-ink-900 px-3.5 py-2' : 'p-2'
                   }`}
+                  style={{ gap: focused ? 6 : 0 }}
                 >
-                  {meta.label}
-                </Text>
+                  <Icon
+                    name={meta.icon}
+                    size={focused ? 18 : 22}
+                    color={focused ? '#ffffff' : '#9097a3'}
+                  />
+                  {focused ? (
+                    <Text className="font-inter-semibold text-[13px] text-white tracking-tight">
+                      {meta.label}
+                    </Text>
+                  ) : null}
+                </View>
               </Pressable>
             )
           })}

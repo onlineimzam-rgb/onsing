@@ -1,27 +1,44 @@
 /**
- * Komuta Merkezi (Dashboard).
+ * Dashboard — Komuta Merkezi (premium redesign).
  *
- * Source design: `stitch_onsig.../dashboard_pro_live`.
+ * Layout (top → bottom):
+ *   1. Header strip: avatar + greeting + notifications bell with badge.
+ *   2. Hero stat card (brand gradient) — bekleyen sözleşme adedi + delta.
+ *   3. Secondary stats: tamamlandı (success tone) + haftalık imza adedi.
+ *   4. Haftalık performans grafiği — 7 sütun, brand vurgulu son gün.
+ *   5. Gerçek zamanlı akış (signed/sent/viewed events).
+ *   6. Kritik aksiyonlar (status-coloured cards w/ stronger left rail).
  *
- * Sections, top to bottom:
- *   1. Greeting strip (KOMUTA MERKEZİ + name, plus "CANLI SİSTEM" pulse dot)
- *   2. Two operational stat cards (light glass + graphite dark)
- *   3. Live activity feed (sign sessions from last events)
- *   4. Critical actions (active contracts with pending signatures, severity-ranked)
- *   5. Weekly performance chart (7-day signed-contract sparkline)
- *
- * Data comes from a single GET /api/dashboard/summary call (see lib/queries/dashboard.ts).
+ * Visual rules:
+ *   • Background: canvas (#f6f7fb).
+ *   • Cards: white, hairline border, soft shadow.
+ *   • No glassmorphism, no dark slabs except the hero accent card.
+ *   • Skeleton placeholders while loading, never spinners on first paint.
  */
+import { LinearGradient } from 'expo-linear-gradient'
 import { useRouter } from 'expo-router'
 import { useEffect, useRef } from 'react'
-import { ActivityIndicator, Animated, Easing, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native'
+import {
+  Animated,
+  Easing,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-// useSafeAreaInsets is used inside TopBar below — keep import.
 
+import { Avatar } from '@/components/avatar'
+import { Card } from '@/components/card'
 import { Icon } from '@/components/icon'
+import { SectionHeader } from '@/components/section-header'
+import { Skeleton } from '@/components/skeleton'
 import { useAuthStore } from '@/lib/auth'
 import { relativeTime, weekdayLabels } from '@/lib/format'
+import { haptic } from '@/lib/haptic'
 import { useDashboardSummary } from '@/lib/queries/dashboard'
+import { shadows } from '@/lib/shadow'
 
 export default function Dashboard() {
   const router = useRouter()
@@ -29,96 +46,125 @@ export default function Dashboard() {
   const { data, isLoading, isError, error, refetch, isRefetching } = useDashboardSummary()
 
   const greetingName =
-    data?.me.user?.name?.split(' ')[0] || user?.fullName?.split(' ')[0] || 'Hoş geldiniz'
+    data?.me.user?.name?.split(' ')[0] || user?.fullName?.split(' ')[0] || ''
+  const fullName = data?.me.user?.name || user?.fullName || ''
+
+  const openContract = (id: number) => {
+    haptic.tap()
+    router.push({ pathname: '/contract/[id]', params: { id: String(id) } })
+  }
 
   return (
-    <View className="flex-1 bg-background">
-      <TopBar pendingCount={data?.stats.pending ?? 0} />
+    <View className="flex-1 bg-canvas">
+      <Header
+        name={fullName}
+        criticalCount={data?.criticalActions.length ?? 0}
+      />
 
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 16, paddingTop: 16 }}
+        contentContainerStyle={{ paddingBottom: 140 }}
+        showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#6b38d4" />
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={refetch}
+            tintColor="#7d5af2"
+          />
         }
       >
         {/* Greeting */}
-        <View className="mb-5 flex-row justify-between items-end">
-          <View>
-            <Text className="font-geist-semibold text-[11px] text-on-surface-variant/70 uppercase tracking-[0.1em] mb-0.5">
-              Komuta Merkezi
-            </Text>
-            <Text className="font-inter-bold text-[22px] text-primary">{greetingName}</Text>
+        <View className="px-5 pt-2 pb-5">
+          <Text className="font-inter text-[13px] text-ink-500">İyi akşamlar,</Text>
+          <Text className="font-inter-bold text-h1 text-ink-900 mt-1">
+            {greetingName || 'Hoş geldiniz'}
+          </Text>
+          <View className="mt-1.5">
+            <PulseLine />
           </View>
-          <LiveDot />
         </View>
 
         {isError ? (
-          <ErrorCard message={(error as Error)?.message || 'Veri alınamadı'} onRetry={refetch} />
-        ) : isLoading && !data ? (
-          <View className="py-16 items-center">
-            <ActivityIndicator color="#6b38d4" />
+          <View className="px-5">
+            <ErrorCard message={(error as Error)?.message || 'Veri alınamadı'} onRetry={refetch} />
           </View>
+        ) : isLoading && !data ? (
+          <DashboardSkeleton />
         ) : data ? (
           <>
-            {/* Stat cards */}
-            <View className="flex-row gap-3 mb-6">
-              <PendingCard pending={data.stats.pending} pendingNew={data.stats.pendingNew} />
-              <CompletedCard completed={data.stats.completed} weeklyCompleted={data.stats.weeklyCompleted} />
+            {/* Hero stat — pending */}
+            <View className="px-5 mb-4">
+              <HeroStatCard
+                pending={data.stats.pending}
+                pendingNew={data.stats.pendingNew}
+                onPress={() => router.push({ pathname: '/(tabs)/contracts' })}
+              />
+            </View>
+
+            {/* Secondary stats */}
+            <View className="px-5 flex-row gap-3 mb-6">
+              <CompletedStatCard completed={data.stats.completed} />
+              <WeeklyStatCard count={data.stats.weeklyCompleted} />
+            </View>
+
+            {/* Weekly chart */}
+            <View className="px-5 mb-7">
+              <WeeklyChart values={data.stats.weekly} total={data.stats.weeklyCompleted} />
             </View>
 
             {/* Live activity feed */}
-            <SectionHeading title="Gerçek Zamanlı Akış" badge={`${data.liveFeed.length} olay`} />
-            <View className="gap-2 mb-6">
-              {data.liveFeed.length === 0 ? (
-                <EmptyHint message="Henüz aktivite yok." />
-              ) : (
-                data.liveFeed.map((f) => (
-                  <FeedRow
-                    key={f.id}
-                    item={f}
-                    onPress={() =>
-                      router.push({ pathname: '/contract/[id]', params: { id: String(f.contractId) } })
-                    }
+            <View className="px-5 mb-7">
+              <SectionHeader
+                title="Gerçek Zamanlı Akış"
+                count={data.liveFeed.length}
+                actionLabel={data.liveFeed.length > 0 ? 'Tümü' : undefined}
+                onAction={() => router.push({ pathname: '/(tabs)/contracts' })}
+              />
+              <Card padded="md" elevation="sm">
+                {data.liveFeed.length === 0 ? (
+                  <EmptyHint
+                    icon="bolt"
+                    title="Henüz aktivite yok"
+                    body="Yeni bir sözleşme oluşturduğunda burada görünecek."
                   />
-                ))
-              )}
+                ) : (
+                  data.liveFeed.map((f, i) => (
+                    <FeedRow
+                      key={f.id}
+                      item={f}
+                      isLast={i === data.liveFeed.length - 1}
+                      onPress={() => openContract(f.contractId)}
+                    />
+                  ))
+                )}
+              </Card>
             </View>
 
             {/* Critical actions */}
-            <SectionHeading
-              title="Kritik Aksiyonlar"
-              right={
-                data.criticalActions.length > 0 ? (
-                  <Pressable
-                    onPress={() => router.push({ pathname: '/(tabs)/contracts' })}
-                    className="active:opacity-60 flex-row items-center gap-1"
-                  >
-                    <Text className="font-geist-semibold text-[10px] text-secondary uppercase tracking-widest">
-                      Tümü
-                    </Text>
-                    <Icon name="keyboard-double-arrow-right" size={14} color="#6b38d4" />
-                  </Pressable>
-                ) : null
-              }
-            />
-            <View className="gap-2 mb-6">
-              {data.criticalActions.length === 0 ? (
-                <EmptyHint message="Bekleyen kritik bir aksiyon yok." />
-              ) : (
-                data.criticalActions.map((a) => (
-                  <CriticalRow
-                    key={a.contractId}
-                    action={a}
-                    onPress={() =>
-                      router.push({ pathname: '/contract/[id]', params: { id: String(a.contractId) } })
-                    }
-                  />
-                ))
-              )}
+            <View className="px-5">
+              <SectionHeader
+                title="Kritik Aksiyonlar"
+                count={data.criticalActions.length}
+              />
+              <View className="gap-2.5">
+                {data.criticalActions.length === 0 ? (
+                  <Card padded="lg" elevation="sm">
+                    <EmptyHint
+                      icon="check-circle"
+                      title="Her şey kontrol altında"
+                      body="Bekleyen kritik bir aksiyon yok."
+                    />
+                  </Card>
+                ) : (
+                  data.criticalActions.map((a) => (
+                    <CriticalRow
+                      key={a.contractId}
+                      action={a}
+                      onPress={() => openContract(a.contractId)}
+                    />
+                  ))
+                )}
+              </View>
             </View>
-
-            {/* Weekly performance */}
-            <WeeklyChart values={data.stats.weekly} total={data.stats.weeklyCompleted} />
           </>
         ) : null}
       </ScrollView>
@@ -126,39 +172,47 @@ export default function Dashboard() {
   )
 }
 
-// ─── Subcomponents ───────────────────────────────────────────────────────
+// ─── Header ──────────────────────────────────────────────────────────────
 
-function TopBar({ pendingCount }: { pendingCount: number }) {
+function Header({ name, criticalCount }: { name: string; criticalCount: number }) {
   const insets = useSafeAreaInsets()
   return (
     <View
-      className="flex-row items-center justify-between px-container-padding-mobile py-3 border-b border-outline-variant/20 bg-background"
-      style={{ paddingTop: insets.top + 12 }}
+      className="px-5 pb-3 flex-row items-center justify-between bg-canvas"
+      style={{ paddingTop: insets.top + 10 }}
     >
-      <View className="flex-row items-center gap-2">
-        <View className="w-8 h-8 bg-primary rounded-lg items-center justify-center">
-          <Icon name="auto_graph" size={18} color="#ffffff" />
+      <View className="flex-row items-center gap-3 flex-1">
+        <Avatar name={name} size="md" />
+        <View className="flex-1">
+          <Text className="font-inter text-[11px] text-ink-400 uppercase tracking-[1.4px]">
+            OnSig
+          </Text>
+          <Text
+            className="font-inter-semibold text-[13px] text-ink-700 mt-0.5"
+            numberOfLines={1}
+          >
+            Komuta Merkezi
+          </Text>
         </View>
-        <Text className="font-inter-bold text-[18px] text-primary tracking-tight">OnSig</Text>
       </View>
-      <View className="flex-row items-center gap-2">
-        {pendingCount > 0 ? (
-          <View className="flex-row items-center gap-1.5 px-2 py-1 rounded-full bg-secondary/10">
-            <View className="w-1.5 h-1.5 rounded-full bg-secondary" />
-            <Text className="font-geist-semibold text-[10px] text-secondary uppercase tracking-wide">
-              {pendingCount} bekleyen
-            </Text>
+      <Pressable
+        className="w-10 h-10 rounded-full bg-card border border-hairline items-center justify-center active:opacity-70"
+        style={shadows.xs}
+      >
+        <Icon name="notifications-none" size={20} color="#2a2d33" />
+        {criticalCount > 0 ? (
+          <View
+            className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-danger-500 rounded-full items-center justify-center border-2 border-canvas"
+          >
+            <Text className="font-inter-bold text-[10px] text-white">{criticalCount}</Text>
           </View>
         ) : null}
-        <View className="w-9 h-9 rounded-full bg-surface-container-low items-center justify-center border border-outline-variant/30">
-          <Icon name="notifications" size={18} color="#191c1d" />
-        </View>
-      </View>
+      </Pressable>
     </View>
   )
 }
 
-function LiveDot() {
+function PulseLine() {
   const pulse = useRef(new Animated.Value(0)).current
   useEffect(() => {
     Animated.loop(
@@ -168,123 +222,180 @@ function LiveDot() {
       ])
     ).start()
   }, [pulse])
-  const opacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] })
-
+  const opacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.35, 1] })
   return (
-    <View className="flex-row items-center gap-2 bg-surface-container-lowest/60 px-2 py-1 rounded-full border border-outline-variant/30">
-      <Animated.View style={{ opacity }} className="w-1.5 h-1.5 bg-tertiary-fixed-dim rounded-full" />
-      <Text className="font-geist-semibold text-[10px] text-on-surface-variant uppercase tracking-wider">
-        Canlı Sistem
+    <View className="flex-row items-center gap-2">
+      <Animated.View
+        className="w-1.5 h-1.5 rounded-full bg-success-500"
+        style={{ opacity }}
+      />
+      <Text className="font-inter text-[12px] text-ink-500">
+        Sistem aktif · Otomatik senkronizasyon açık
       </Text>
     </View>
   )
 }
 
-function PendingCard({ pending, pendingNew }: { pending: number; pendingNew: number }) {
+// ─── Stat cards ──────────────────────────────────────────────────────────
+
+function HeroStatCard({
+  pending,
+  pendingNew,
+  onPress,
+}: {
+  pending: number
+  pendingNew: number
+  onPress: () => void
+}) {
   return (
-    <View className="flex-1 bg-surface-container-lowest border border-outline-variant/40 p-4 rounded-2xl h-28 justify-between">
-      <View className="flex-row items-center justify-between">
-        <Icon name="pending_actions" size={18} color="#8455ef" />
-        <Sparkline heights={[40, 60, 80, 50]} color="rgba(132,85,239," accentLast />
-      </View>
-      <View>
-        <View className="flex-row items-baseline gap-1">
-          <Text className="font-inter-bold text-2xl text-primary leading-none">{pending}</Text>
-          {pendingNew > 0 ? (
-            <Text className="font-geist-semibold text-[9px] text-secondary uppercase">
-              +{pendingNew} YENİ
+    <Pressable onPress={onPress} className="active:opacity-95">
+      <LinearGradient
+        colors={['#7d5af2', '#5a30d0']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[
+          { borderRadius: 24, padding: 22, overflow: 'hidden' },
+          shadows.brand,
+        ]}
+      >
+        <View className="flex-row items-center justify-between mb-5">
+          <View className="flex-row items-center gap-2 px-2.5 py-1 bg-white/15 rounded-full">
+            <Icon name="pending-actions" size={13} color="#ffffff" />
+            <Text className="font-inter-semibold text-[11px] text-white tracking-wide">
+              BEKLEYEN
             </Text>
-          ) : null}
-        </View>
-        <Text className="font-geist-semibold text-[9px] text-on-surface-variant/60 uppercase tracking-widest mt-1">
-          Bekleyen Sözleşme
-        </Text>
-      </View>
-    </View>
-  )
-}
-
-function CompletedCard({
-  completed,
-  weeklyCompleted,
-}: {
-  completed: number
-  weeklyCompleted: number
-}) {
-  return (
-    <View className="flex-1 bg-primary-container p-4 rounded-2xl h-28 justify-between">
-      <View className="flex-row items-center justify-between">
-        <Icon name="task_alt" size={18} color="#4edea3" />
-        <Sparkline heights={[30, 50, 80, 70]} color="rgba(255,255,255," accentLast accentColor="#4edea3" />
-      </View>
-      <View>
-        <Text className="font-inter-bold text-2xl text-white leading-none">{completed}</Text>
-        <Text className="font-geist-semibold text-[9px] text-white/40 uppercase tracking-widest mt-1">
-          Tamamlanan
-          {weeklyCompleted > 0 ? ` · +${weeklyCompleted} BU HAFTA` : ''}
-        </Text>
-      </View>
-    </View>
-  )
-}
-
-function Sparkline({
-  heights,
-  color,
-  accentLast,
-  accentColor = '#8455ef',
-}: {
-  heights: number[]
-  color: string
-  accentLast?: boolean
-  accentColor?: string
-}) {
-  return (
-    <View className="flex-row items-end gap-0.5 h-5">
-      {heights.map((h, i) => {
-        const isLast = i === heights.length - 1
-        return (
-          <View
-            key={i}
-            style={{
-              width: 3,
-              height: `${h}%`,
-              backgroundColor: accentLast && isLast ? accentColor : `${color}${0.15 + i * 0.15})`,
-              borderRadius: 1,
-            }}
-          />
-        )
-      })}
-    </View>
-  )
-}
-
-function SectionHeading({
-  title,
-  badge,
-  right,
-}: {
-  title: string
-  badge?: string
-  right?: React.ReactNode
-}) {
-  return (
-    <View className="flex-row items-center justify-between mb-3">
-      <View className="flex-row items-center gap-2">
-        <Text className="font-inter-semibold text-[15px] text-primary tracking-tight">{title}</Text>
-        {badge ? (
-          <View className="px-2 py-0.5 bg-secondary/10 rounded-full">
-            <Text className="font-geist-semibold text-[9px] text-secondary uppercase">{badge}</Text>
           </View>
-        ) : null}
-      </View>
-      {right}
-    </View>
+          <Icon name="north-east" size={18} color="rgba(255,255,255,0.85)" />
+        </View>
+        <View className="flex-row items-baseline gap-2">
+          <Text className="font-inter-bold text-white" style={{ fontSize: 44, lineHeight: 48, letterSpacing: -1.5 }}>
+            {pending}
+          </Text>
+          <Text className="font-inter text-white/70 text-[15px]">sözleşme</Text>
+        </View>
+        <View className="flex-row items-center gap-2 mt-2">
+          {pendingNew > 0 ? (
+            <View className="flex-row items-center gap-1 px-2 py-0.5 bg-white/20 rounded-full">
+              <Icon name="arrow-upward" size={11} color="#ffffff" />
+              <Text className="font-inter-semibold text-[11px] text-white">
+                {pendingNew} yeni · bu hafta
+              </Text>
+            </View>
+          ) : (
+            <Text className="font-inter text-white/60 text-[12px]">Bu hafta yeni yok</Text>
+          )}
+        </View>
+      </LinearGradient>
+    </Pressable>
   )
 }
+
+function CompletedStatCard({ completed }: { completed: number }) {
+  return (
+    <Card padded="md" elevation="sm" className="flex-1">
+      <View className="flex-row items-center gap-2 mb-3">
+        <View className="w-7 h-7 rounded-lg bg-success-50 items-center justify-center">
+          <Icon name="task-alt" size={15} color="#047857" />
+        </View>
+        <Text className="font-inter-semibold text-[11px] text-ink-500 uppercase tracking-wide">
+          Tamamlanan
+        </Text>
+      </View>
+      <Text className="font-inter-bold text-ink-900" style={{ fontSize: 26, lineHeight: 30, letterSpacing: -0.6 }}>
+        {completed}
+      </Text>
+      <Text className="font-inter text-[12px] text-ink-400 mt-1">Toplam imzalanan</Text>
+    </Card>
+  )
+}
+
+function WeeklyStatCard({ count }: { count: number }) {
+  return (
+    <Card padded="md" elevation="sm" className="flex-1">
+      <View className="flex-row items-center gap-2 mb-3">
+        <View className="w-7 h-7 rounded-lg bg-brand-50 items-center justify-center">
+          <Icon name="trending-up" size={15} color="#5a30d0" />
+        </View>
+        <Text className="font-inter-semibold text-[11px] text-ink-500 uppercase tracking-wide">
+          Bu Hafta
+        </Text>
+      </View>
+      <Text className="font-inter-bold text-ink-900" style={{ fontSize: 26, lineHeight: 30, letterSpacing: -0.6 }}>
+        {count}
+      </Text>
+      <Text className="font-inter text-[12px] text-ink-400 mt-1">Yeni imza</Text>
+    </Card>
+  )
+}
+
+// ─── Weekly chart ────────────────────────────────────────────────────────
+
+function WeeklyChart({ values, total }: { values: number[]; total: number }) {
+  const max = Math.max(...values, 1)
+  const labels = weekdayLabels()
+  return (
+    <Card padded="lg" elevation="sm">
+      <View className="flex-row items-start justify-between mb-4">
+        <View>
+          <Text className="font-inter-semibold text-[11px] text-ink-500 uppercase tracking-wide">
+            Haftalık Performans
+          </Text>
+          <View className="flex-row items-baseline gap-1.5 mt-1.5">
+            <Text className="font-inter-bold text-ink-900" style={{ fontSize: 24, letterSpacing: -0.6 }}>
+              {total}
+            </Text>
+            <Text className="font-inter text-[12px] text-ink-500">imza · son 7 gün</Text>
+          </View>
+        </View>
+        <View className="w-9 h-9 rounded-xl bg-subtle items-center justify-center">
+          <Icon name="bar-chart" size={18} color="#6b7280" />
+        </View>
+      </View>
+      <View className="h-20 flex-row items-end justify-between gap-1.5">
+        {values.map((v, i) => {
+          const isLast = i === values.length - 1
+          const heightPct = v === 0 ? 6 : Math.max(12, Math.round((v / max) * 100))
+          return (
+            <View key={i} className="flex-1 items-center justify-end" style={{ height: '100%' }}>
+              <View
+                style={{
+                  width: '100%',
+                  height: `${heightPct}%`,
+                  borderRadius: 6,
+                  backgroundColor: isLast ? '#7d5af2' : '#e7e9f0',
+                }}
+              />
+            </View>
+          )
+        })}
+      </View>
+      <View className="flex-row justify-between mt-2 px-0.5">
+        {labels.map((label, i) => (
+          <Text
+            key={i}
+            className={`font-inter-semibold text-[10px] flex-1 text-center ${
+              i === labels.length - 1 ? 'text-brand-600' : 'text-ink-400'
+            }`}
+          >
+            {label}
+          </Text>
+        ))}
+      </View>
+    </Card>
+  )
+}
+
+// ─── Feed row ────────────────────────────────────────────────────────────
+
+const FEED_META = {
+  signed:  { icon: 'check-circle' as const, color: '#10b981', tint: 'bg-success-50', label: 'imzaladı' },
+  sent:    { icon: 'send' as const,         color: '#7d5af2', tint: 'bg-brand-50',   label: 'gönderildi' },
+  viewed:  { icon: 'visibility' as const,   color: '#f59e0b', tint: 'bg-warn-50',    label: 'görüntülendi' },
+} as const
 
 function FeedRow({
   item,
+  isLast,
   onPress,
 }: {
   item: {
@@ -293,47 +404,38 @@ function FeedRow({
     contractTitle: string
     at: string
   }
+  isLast: boolean
   onPress: () => void
 }) {
-  const meta = {
-    signed: { icon: 'edit-note' as const, color: '#4edea3', label: 'imzaladı' },
-    sent: { icon: 'send' as const, color: '#8455ef', label: 'gönderildi' },
-    viewed: { icon: 'visibility' as const, color: '#f59e0b', label: 'görüntülendi' },
-  }[item.kind]
-
+  const meta = FEED_META[item.kind]
   return (
     <Pressable
       onPress={onPress}
-      className="bg-surface-container-lowest border border-outline-variant/30 rounded-xl px-3.5 py-3 flex-row items-center justify-between active:opacity-80"
+      className={`flex-row items-center gap-3 py-3 active:opacity-70 ${
+        isLast ? '' : 'border-b border-hairline'
+      }`}
     >
-      <View className="flex-row items-center gap-3 flex-1">
-        <View
-          className="w-9 h-9 rounded-full items-center justify-center"
-          style={{ backgroundColor: `${meta.color}22` }}
-        >
-          <Icon name={meta.icon} size={18} color={meta.color} />
-        </View>
-        <View className="flex-1">
-          <View className="flex-row items-center gap-1.5">
-            <Text className="font-inter-semibold text-[13px] text-primary" numberOfLines={1}>
-              {item.actor || 'Alıcı'}
-            </Text>
-            <Text className="font-inter text-[11px] text-on-surface-variant">{meta.label}</Text>
-            <View className="w-1 h-1 rounded-full bg-outline-variant" />
-            <Text className="font-inter text-[11px] text-secondary">{relativeTime(item.at)}</Text>
-          </View>
-          <Text
-            className="font-inter text-[11px] text-on-surface-variant/70 mt-0.5"
-            numberOfLines={1}
-          >
-            {item.contractTitle}
-          </Text>
-        </View>
+      <Avatar name={item.actor} size="sm" />
+      <View className="flex-1">
+        <Text className="font-inter text-[13px] text-ink-700" numberOfLines={1}>
+          <Text className="font-inter-semibold text-ink-900">{item.actor || 'Alıcı'}</Text>{' '}
+          <Text className="text-ink-500">{meta.label}</Text>
+        </Text>
+        <Text className="font-inter text-[12px] text-ink-400 mt-0.5" numberOfLines={1}>
+          {item.contractTitle}
+        </Text>
       </View>
-      <Icon name="arrow_outward" size={16} color="#cfc4c5" />
+      <View className="items-end gap-1">
+        <View className={`w-6 h-6 rounded-full ${meta.tint} items-center justify-center`}>
+          <Icon name={meta.icon} size={13} color={meta.color} />
+        </View>
+        <Text className="font-inter text-[10px] text-ink-400">{relativeTime(item.at)}</Text>
+      </View>
     </Pressable>
   )
 }
+
+// ─── Critical action row ─────────────────────────────────────────────────
 
 function CriticalRow({
   action,
@@ -348,117 +450,107 @@ function CriticalRow({
   onPress: () => void
 }) {
   const severityMeta = {
-    high: { color: '#ba1a1a', label: 'Acil İmza Gerekli', border: 'border-l-error' },
-    medium: { color: '#f59e0b', label: 'Yakın Aksiyon', border: 'border-l-[#f59e0b]' },
-    low: { color: '#6b38d4', label: 'Bekliyor', border: 'border-l-secondary' },
+    high:   { rail: 'bg-danger-500',  tint: 'bg-danger-50',  text: 'text-danger-700', dot: '#dc2626', label: 'Acil İmza Gerekli' },
+    medium: { rail: 'bg-warn-500',    tint: 'bg-warn-50',    text: 'text-warn-700',   dot: '#f59e0b', label: 'Yakın Aksiyon' },
+    low:    { rail: 'bg-brand-500',   tint: 'bg-brand-50',   text: 'text-brand-700',  dot: '#7d5af2', label: 'Bekliyor' },
   }[action.severity]
 
   return (
-    <Pressable
-      onPress={onPress}
-      className={`bg-surface-container-lowest border border-outline-variant/30 border-l-4 ${severityMeta.border} rounded-xl px-3.5 py-3.5 flex-row items-center justify-between active:opacity-80`}
-    >
-      <View className="flex-row items-center gap-3 flex-1">
-        <View
-          className="w-10 h-10 rounded-xl items-center justify-center border"
-          style={{ backgroundColor: `${severityMeta.color}10`, borderColor: `${severityMeta.color}30` }}
-        >
-          <Icon name="priority_high" size={18} color={severityMeta.color} />
-        </View>
-        <View className="flex-1">
-          <Text className="font-inter-semibold text-[13px] text-primary" numberOfLines={1}>
-            {action.title}
-          </Text>
-          <View className="flex-row items-center gap-2 mt-0.5">
-            <Text className="font-inter text-[11px] text-on-surface-variant/70" numberOfLines={1}>
-              {action.recipientName || 'Alıcı atanmamış'}
-            </Text>
-            <View className="w-0.5 h-0.5 rounded-full bg-outline-variant" />
-            <Text
-              className="font-geist-semibold text-[10px] uppercase"
-              style={{ color: severityMeta.color }}
-            >
-              {severityMeta.label}
-            </Text>
+    <Pressable onPress={onPress} className="active:opacity-95">
+      <View className="bg-card border border-hairline rounded-2xl overflow-hidden flex-row" style={shadows.sm}>
+        <View className={`w-1 ${severityMeta.rail}`} />
+        <View className="flex-1 p-4 flex-row items-center gap-3">
+          <View className={`w-10 h-10 rounded-xl ${severityMeta.tint} items-center justify-center`}>
+            <Icon name="priority-high" size={18} color={severityMeta.dot} />
           </View>
+          <View className="flex-1">
+            <Text className="font-inter-semibold text-[14px] text-ink-900" numberOfLines={1}>
+              {action.title}
+            </Text>
+            <View className="flex-row items-center gap-2 mt-1">
+              <Text
+                className={`font-inter-semibold text-[10px] uppercase tracking-wide ${severityMeta.text}`}
+              >
+                {severityMeta.label}
+              </Text>
+              {action.recipientName ? (
+                <>
+                  <View className="w-0.5 h-0.5 rounded-full bg-ink-300" />
+                  <Text className="font-inter text-[12px] text-ink-500" numberOfLines={1}>
+                    {action.recipientName}
+                  </Text>
+                </>
+              ) : null}
+            </View>
+          </View>
+          <Icon name="chevron-right" size={18} color="#b9bec6" />
         </View>
       </View>
-      <Icon name="chevron_right" size={20} color="#cfc4c5" />
     </Pressable>
   )
 }
 
-function WeeklyChart({ values, total }: { values: number[]; total: number }) {
-  const max = Math.max(...values, 1)
-  const labels = weekdayLabels()
+// ─── Skeletons & empty/error ─────────────────────────────────────────────
+
+function DashboardSkeleton() {
   return (
-    <View className="bg-primary-container p-4 rounded-3xl mt-2">
-      <View className="flex-row items-start justify-between mb-4">
-        <View>
-          <Text className="font-geist-semibold text-[10px] text-white/80 uppercase tracking-widest">
-            Haftalık Performans
-          </Text>
-          <Text className="font-inter-bold text-2xl text-white mt-1">
-            {total}
-            <Text className="font-inter text-[11px] text-tertiary-fixed-dim">  imza</Text>
-          </Text>
-        </View>
-        <View className="w-10 h-10 rounded-full bg-white/5 items-center justify-center">
-          <Icon name="query_stats" size={18} color="#9ca3af" />
-        </View>
+    <View className="gap-4">
+      <View className="px-5">
+        <View className="bg-subtle rounded-3xl p-5 h-[140px]" />
       </View>
-      <View className="h-16 flex-row items-end justify-between gap-1">
-        {values.map((v, i) => {
-          const heightPct = Math.max(8, Math.round((v / max) * 100))
-          const isLast = i === values.length - 1
-          return (
-            <View key={i} className="flex-1 items-center" style={{ height: '100%' }}>
-              <View style={{ flex: 1 }} />
-              <View
-                className="w-full rounded-t"
-                style={{
-                  height: `${heightPct}%`,
-                  backgroundColor: isLast ? '#8455ef' : 'rgba(255,255,255,0.15)',
-                  shadowColor: isLast ? '#8455ef' : 'transparent',
-                  shadowOpacity: isLast ? 0.4 : 0,
-                  shadowRadius: 8,
-                }}
-              />
-            </View>
-          )
-        })}
+      <View className="px-5 flex-row gap-3">
+        <Skeleton width="100%" height={104} rounded="xl" />
       </View>
-      <View className="flex-row justify-between mt-2">
-        {labels.map((label, i) => (
-          <Text key={i} className="font-geist text-[8px] text-white/30 uppercase">
-            {label}
-          </Text>
-        ))}
+      <View className="px-5">
+        <Skeleton width="100%" height={180} rounded="xl" />
+      </View>
+      <View className="px-5">
+        <Skeleton width="40%" height={14} rounded="md" />
+        <View className="h-3" />
+        <Skeleton width="100%" height={64} rounded="xl" />
       </View>
     </View>
   )
 }
 
-function EmptyHint({ message }: { message: string }) {
+function EmptyHint({
+  icon,
+  title,
+  body,
+}: {
+  icon: string
+  title: string
+  body: string
+}) {
   return (
-    <View className="bg-surface-container-lowest/50 border border-dashed border-outline-variant/40 rounded-xl py-6 items-center">
-      <Text className="font-inter text-body-sm text-on-surface-variant/60">{message}</Text>
+    <View className="py-4 items-center">
+      <View className="w-10 h-10 rounded-full bg-subtle items-center justify-center mb-2">
+        <Icon name={icon} size={18} color="#6b7280" />
+      </View>
+      <Text className="font-inter-semibold text-[14px] text-ink-700">{title}</Text>
+      <Text className="font-inter text-[12px] text-ink-400 mt-0.5 text-center">{body}</Text>
     </View>
   )
 }
 
 function ErrorCard({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
-    <View className="bg-error/10 border border-error/30 rounded-2xl p-4 flex-row items-center gap-3">
-      <Icon name="error-outline" size={24} color="#ba1a1a" />
+    <View className="bg-danger-50 border border-danger-100 rounded-2xl p-4 flex-row items-center gap-3">
+      <View className="w-10 h-10 rounded-xl bg-white items-center justify-center" style={shadows.xs}>
+        <Icon name="error-outline" size={20} color="#dc2626" />
+      </View>
       <View className="flex-1">
-        <Text className="font-inter-semibold text-body-sm text-error">Veri alınamadı</Text>
-        <Text className="font-inter text-[11px] text-on-surface-variant/70 mt-0.5" numberOfLines={2}>
+        <Text className="font-inter-semibold text-[14px] text-danger-700">Veri alınamadı</Text>
+        <Text className="font-inter text-[12px] text-ink-500 mt-0.5" numberOfLines={2}>
           {message}
         </Text>
       </View>
-      <Pressable onPress={onRetry} className="active:opacity-60">
-        <Icon name="refresh" size={20} color="#ba1a1a" />
+      <Pressable
+        onPress={onRetry}
+        className="w-10 h-10 rounded-xl bg-white items-center justify-center active:opacity-70"
+        style={shadows.xs}
+      >
+        <Icon name="refresh" size={18} color="#dc2626" />
       </Pressable>
     </View>
   )

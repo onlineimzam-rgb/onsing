@@ -5,5 +5,5 @@ import { View } from 'react-native'
  * just renders a flash of brand-correct background while the gate decides.
  */
 export default function Index() {
-  return <View className="flex-1 bg-background" />
+  return <View className="flex-1 bg-canvas" />
 }

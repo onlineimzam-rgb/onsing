@@ -8,10 +8,17 @@
     "scheme": "onsig",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.onlineimzam.onsig",
-      "associatedDomains": ["applinks:onsig-prod.fly.dev"]
+      "associatedDomains": ["applinks:onsig-prod.fly.dev"],
+      "infoPlist": {
+        "CFBundleDisplayName": "OnSig",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.onlineimzam.onsig",
@@ -27,7 +34,15 @@
         {
           "action": "VIEW",
           "autoVerify": true,
-          "data": [{ "scheme": "https", "host": "onsig-prod.fly.dev", "pathPrefix": "/sign/" }],
+          "data": [
+            { "scheme": "https", "host": "onsig-prod.fly.dev", "pathPrefix": "/sign/" },
+            { "scheme": "https", "host": "onsig-prod.fly.dev", "pathPrefix": "/contracts/" }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        },
+        {
+          "action": "VIEW",
+          "data": [{ "scheme": "onsig" }],
           "category": ["BROWSABLE", "DEFAULT"]
         }
       ]

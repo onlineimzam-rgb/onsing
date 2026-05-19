@@ -34,13 +34,25 @@ mobile/
 │       ├── _layout.tsx      # Floating bottom nav
 │       ├── index.tsx        # Dashboard (Phase 1 placeholder)
 │       └── profile.tsx      # Profile + logout
+│   ├── contract/[id].tsx    # Sözleşme detay (gradient avatar, progress bar, sticky CTA)
+│   └── settings/            # Settings stack (profile, password)
 ├── components/
-│   ├── button.tsx           # Primary / Secondary / Accent / Dark
-│   └── icon.tsx             # MaterialIcons wrapper with Material Symbols aliases
+│   ├── avatar.tsx           # Hash-stable gradient initials + optional status dot
+│   ├── button.tsx           # primary | brand | soft | outline | ghost | danger | dark | accent
+│   ├── card.tsx             # 22px-radius surface with soft elevation (xs..lg)
+│   ├── icon.tsx             # MaterialIcons wrapper with Material Symbols aliases
+│   ├── section-header.tsx   # "Title · 3 · Tümü →" pattern
+│   ├── skeleton.tsx         # Pulsing loaders (full + per-row)
+│   ├── status-badge.tsx     # Premium pill with leading status dot
+│   └── text-field.tsx       # Focus-aware input with eye-toggle for passwords
 ├── lib/
 │   ├── api.ts               # ky client + JWT/401 hooks
-│   ├── auth.ts              # zustand store + SecureStore
-│   └── queryClient.ts       # TanStack Query default config
+│   ├── auth.ts              # zustand store + SecureStore + pending-route hand-off
+│   ├── format.ts            # relativeTime / shortDate / weekdayLabels (Hermes-safe)
+│   ├── haptic.ts            # tap/light/medium/heavy/success/warning/error wrappers
+│   ├── queryClient.ts       # TanStack Query default config
+│   ├── shadow.ts            # xs/sm/md/lg/brand ViewStyle elevation ramps
+│   └── queries/             # dashboard, contracts, account (mutations)
 ├── tailwind.config.js       # DESIGN.md tokens (colors, type, spacing, radius)
 ├── global.css               # @tailwind directives (loaded by NativeWind)
 ├── babel.config.js          # NativeWind babel preset
@@ -67,21 +79,69 @@ during deploy (`bulenttum@gmail.com` / `Bt_15761576`).
 
 - ✅ **Phase 0** — Bootstrap, design tokens, fonts, providers, splash + onboarding
 - ✅ **Phase 1** — Email/password login + logout
-- ⏳ **Phase 2** — Full dashboard (Komuta Merkezi), contract list, contract detail
+- ✅ **Phase 2** — Full dashboard (Komuta Merkezi), contract list, contract detail
 - ⏳ **Phase 3** — Signature flow (stepper + on-device pad → backend POST)
-- ⏳ **Phase 4** — Profile refinement + deep links + EAS Build / Submit
+- ✅ **Phase 4** — Profile / password / deep links / EAS Build profiles
+- 🧊 **Phase 5** — Push notifications, biometric unlock, offline cache
 
-## EAS Build & Submit (Phase 4)
+## Phase 4 surface area
 
-- **iOS:** Apple Developer account + App Store Connect API key, EAS handles credentials
-- **Android:** Google Play Console + service-account JSON, EAS uploads internal-testing track
-- **OTA:** `eas update` for JS-only hot-fixes once the binary is on the stores
+### Account self-service
 
-## Deep link
+| Screen | File | Backend |
+|---|---|---|
+| Profilim (edit name) | `app/settings/profile.tsx` | `PATCH /api/auth/me` |
+| Şifre değiştir | `app/settings/password.tsx` | `POST /api/auth/change-password` |
+| Hesap durumu (GET) | (planned) | `GET /api/auth/me` |
 
-- Scheme: `onsig://`
-- Universal Links: `https://onsig-prod.fly.dev/sign/<token>` opens the app if installed,
-  falls back to the web sign page otherwise (already configured in `app.json` `intentFilters`).
+The password screen ships with a live strength meter (length + character
+class scoring 0–4) and inline error mapping for the three backend failure
+codes (`invalid_current`, `same_password`, `rate_limited`).
+
+### Deep linking
+
+- **Custom scheme:** `onsig://` — every Expo Router file route is addressable
+  via this scheme. Example: `onsig:///contract/123` opens the contract detail
+  screen.
+- **Universal Links (iOS):** `applinks:onsig-prod.fly.dev` — once the
+  `apple-app-site-association` file is published from the backend.
+- **App Links (Android):** auto-verified for `/sign/*` and `/contracts/*`
+  on `https://onsig-prod.fly.dev`.
+- **Pending-route hand-off:** if the user opens a deep link while logged out,
+  the intended pathname is parked in the zustand auth store and replayed
+  right after a successful login (see `AuthGate` in `app/_layout.tsx`).
+
+### EAS Build & Submit
+
+The `eas.json` profile matrix lives at the repo root:
+
+```bash
+cd onsig/mobile
+
+# One-time: create an EAS project (interactive — picks org + project name)
+eas init
+
+# Development build (dev client APK / iOS simulator binary)
+eas build --profile development --platform android
+eas build --profile development --platform ios
+
+# Internal preview (APK + signed IPA you can hand to QA)
+eas build --profile preview --platform all
+
+# Store-ready release (AAB + IPA)
+eas build --profile production --platform all
+
+# OTA hot-fix once the binary is on the stores
+eas update --branch production --message "fix: dashboard skeleton flicker"
+```
+
+#### Required secrets before the first production build
+
+- **iOS:** Apple Developer membership + App Store Connect app entry. Fill in
+  `submit.production.ios.{appleId, ascAppId, appleTeamId}` in `eas.json`.
+- **Android:** Google Play Console + service-account JSON. Drop it at
+  `mobile/play-service-account.json` (ignored by git) or override the path
+  in `eas.json`.
 
 ## Signature pad notes (Phase 3)
 

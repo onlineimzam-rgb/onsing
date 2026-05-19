@@ -26,11 +26,21 @@ interface AuthState {
   token: string | null
   user: AuthUser | null
   hydrated: boolean
+  /**
+   * Route the user was trying to reach when an auth gate kicked them out.
+   * Used by the AuthGate to send them there after a successful login,
+   * instead of dumping them on the dashboard. Non-persisted on purpose —
+   * it's only meaningful within a single launch.
+   */
+  pendingRoute: string | null
 
   hydrate: () => Promise<void>
   login: (token: string, user: AuthUser) => Promise<void>
   logout: () => Promise<void>
   setOnboardingSeen: () => Promise<void>
+  /** Partial-merge updates to the cached user (e.g. after a profile edit). */
+  setUser: (user: AuthUser) => Promise<void>
+  setPendingRoute: (route: string | null) => void
   onboardingSeen: boolean
 }
 
@@ -43,6 +53,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   hydrated: false,
   onboardingSeen: false,
+  pendingRoute: null,
 
   hydrate: async () => {
     try {
@@ -81,4 +92,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     await SecureStore.setItemAsync(ONBOARDING_KEY, '1')
     set({ onboardingSeen: true })
   },
+
+  setUser: async (user) => {
+    await SecureStore.setItemAsync(USER_KEY, JSON.stringify(user))
+    set({ user })
+  },
+
+  setPendingRoute: (route) => set({ pendingRoute: route }),
 }))
