@@ -160,6 +160,18 @@ export async function POST(req: NextRequest) {
   const refresh = await signRefreshToken({ sub: String(user.id), tid: tenantId, jti: nanoid(21) })
   setAuthCookies(access, refresh)
 
+  // Surface tenant display info so mobile clients (which can't read httpOnly
+  // cookies in JS) have everything they need from a single login round-trip.
+  const [tenant] = await db
+    .select({
+      id: schema.tenants.id,
+      name: schema.tenants.name,
+      slug: schema.tenants.slug,
+    })
+    .from(schema.tenants)
+    .where(eq(schema.tenants.id, tenantId))
+    .limit(1)
+
   await appendAudit({
     tenantId,
     actorId: user.id,
@@ -174,6 +186,14 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     ok: true,
     user: { id: user.id, name: user.name, email: user.email, phone: user.phone },
-    tenant: { id: tenantId, role },
+    tenant: {
+      id: tenantId,
+      name: tenant?.name ?? null,
+      slug: tenant?.slug ?? null,
+      role,
+    },
+    // For mobile clients — web ignores these and relies on httpOnly cookies.
+    accessToken: access,
+    refreshToken: refresh,
   })
 }

@@ -9,7 +9,7 @@
  */
 
 import { SignJWT, jwtVerify, type JWTPayload } from 'jose'
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 
 const ACCESS_TTL = Number(process.env.JWT_ACCESS_TTL_SECONDS || 900)
 const REFRESH_TTL = Number(process.env.JWT_REFRESH_TTL_SECONDS || 60 * 60 * 24 * 7)
@@ -115,8 +115,23 @@ export function clearAuthCookies() {
   c.set(REFRESH_COOKIE, '', { path: '/api/auth', maxAge: 0 })
 }
 
+/**
+ * Resolves the access token from the current request, preferring `Authorization:
+ * Bearer <token>` (native/mobile clients) and falling back to the httpOnly
+ * `onsig_at` cookie (web). Token shape is identical in both transports — the
+ * same JWT issued by `setAuthCookies` is what we expect over the header too.
+ */
+export function readAccessToken(): string | null {
+  const auth = headers().get('authorization')
+  if (auth) {
+    const m = /^Bearer\s+(.+)$/i.exec(auth.trim())
+    if (m && m[1]) return m[1].trim()
+  }
+  return cookies().get(ACCESS_COOKIE)?.value ?? null
+}
+
 export async function getCurrentSession(): Promise<AccessTokenPayload | null> {
-  const token = cookies().get(ACCESS_COOKIE)?.value
+  const token = readAccessToken()
   if (!token) return null
   return verifyAccess(token)
 }

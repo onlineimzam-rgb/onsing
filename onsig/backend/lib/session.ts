@@ -9,10 +9,9 @@
  */
 
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { eq } from 'drizzle-orm'
 import { db, schema } from '@/db'
-import { ACCESS_COOKIE, verifyAccess, type AccessTokenPayload } from './auth'
+import { readAccessToken, verifyAccess, type AccessTokenPayload } from './auth'
 
 export type PlatformRole =
   | 'none'
@@ -35,7 +34,8 @@ export interface ResolvedAdminSession extends ResolvedSession {
 }
 
 export async function getOptionalUser(): Promise<ResolvedSession | null> {
-  const token = cookies().get(ACCESS_COOKIE)?.value
+  // Read from Bearer header (mobile) or onsig_at cookie (web).
+  const token = readAccessToken()
   if (!token) return null
   const payload = await verifyAccess(token)
   if (!payload) return null
