@@ -72,7 +72,7 @@ export async function GET() {
       and(
         eq(schema.contracts.tenantId, tenantId),
         sql`${schema.contracts.status} in ('taslak','aktif')`,
-        sql`${schema.contracts.createdAt} >= ${sevenDaysAgo}`
+        sql`${schema.contracts.createdAt} >= ${sevenDaysAgo.toISOString()}::timestamptz`
       )
     )
 
