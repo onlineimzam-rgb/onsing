@@ -9,6 +9,7 @@
  */
 
 import { Resend } from 'resend'
+import { env } from './env'
 
 export type Channel = 'email' | 'sms'
 
@@ -40,9 +41,9 @@ export interface SendEmailInput {
 }
 
 export async function sendEmail(input: SendEmailInput): Promise<NotifyResult> {
-  const fromName = process.env.MAIL_FROM_NAME || 'OnSig'
-  const fromAddr = process.env.MAIL_FROM_ADDRESS || 'no-reply@onsig.local'
-  const from = `${fromName} <${fromAddr}>`
+  // env.MAIL_FROM is either a plain address ("noreply@x.com") or RFC 5322
+  // formatted ("OnSig <noreply@x.com>"). Both are accepted by Resend.
+  const from = env.MAIL_FROM
 
   const client = getResend()
   if (!client) {
