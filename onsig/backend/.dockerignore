@@ -1,0 +1,43 @@
+# Source-control / IDE
+.git
+.gitignore
+.vscode
+.idea
+*.log
+
+# Node / Next.js build outputs (Docker builds them fresh)
+node_modules
+.next
+out
+dist
+build
+
+# Local environment — secrets must come from Key Vault, never the image
+.env
+.env.*
+!.env.production.example
+!.env.local.example
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Test / coverage
+coverage
+.nyc_output
+*.test.tsx
+*.test.ts
+*.spec.tsx
+
+# CI / infra (not needed inside the container)
+.github
+azure-pipelines.yml
+infra/
+docs/
+scripts/
+
+# Temporary build artifacts
+*.tsbuildinfo
+.eslintcache
+devnew.log
+dev.log

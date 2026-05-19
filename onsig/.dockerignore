@@ -1,0 +1,54 @@
+# =============================================================================
+# Build context filter — keep only what `next build` actually needs.
+#
+# Without this, the 485 MB backend/node_modules tree gets uploaded to Fly's
+# Depot builder on every deploy. We reinstall deps inside the deps stage of
+# the Dockerfile anyway, so shipping them in the context is pure overhead.
+# =============================================================================
+
+# Ignore everything by default, then re-include what we need below.
+
+# ---- always exclude ---------------------------------------------------------
+**/node_modules
+**/.next
+**/out
+**/dist
+**/build
+**/coverage
+**/.cache
+**/.eslintcache
+**/.tsbuildinfo
+**/tsconfig.tsbuildinfo
+**/.next/cache
+
+# Logs + local artefacts.
+**/*.log
+**/devnew.log
+**/dev.log
+**/fly-deploy.log
+**/npm-debug.log*
+
+# Editors / OS.
+**/.git
+**/.gitignore
+**/.vscode
+**/.idea
+**/.DS_Store
+**/Thumbs.db
+
+# Env files NEVER ship into the image — Fly secret store loads them at runtime.
+**/.env
+**/.env.*
+!**/.env.production.example
+!**/.env.local.example
+
+# Sibling workspaces we don't need on the server container.
+mobile/
+reference-from-cugm/
+docs/
+infra/
+
+# Backend dev-only.
+backend/storage
+backend/scripts/_*.mjs
+backend/scripts/_*.js

@@ -1,0 +1,349 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Admin shell — dark-only operational surface. Tokens are kept here (not in
+ * Tailwind theme) so they cascade only inside `.admin-shell` and never leak
+ * into the customer-facing app.
+ * ─────────────────────────────────────────────────────────────────────── */
+.admin-shell {
+  /* slate palette — slightly cooler than the customer ink scale */
+  --a-bg:        #0A0D14;
+  --a-bg-elev:   #0E121C;
+  --a-panel:     #121724;
+  --a-panel-2:   #161C2D;
+  --a-line:      rgba(255, 255, 255, 0.06);
+  --a-line-2:    rgba(255, 255, 255, 0.10);
+  --a-line-3:    rgba(255, 255, 255, 0.16);
+  --a-text-1:    #F1F3F8;
+  --a-text-2:    #C4CAD9;
+  --a-text-3:    #8B92A6;
+  --a-text-4:    #5A6276;
+  --a-text-5:    #3F465A;
+  --a-accent:    #7C77FF;
+  --a-accent-2:  #5E55E5;
+  --a-success:   #2DD4BF;
+  --a-warning:   #F59E0B;
+  --a-danger:    #F87171;
+  --a-info:      #38BDF8;
+
+  background-color: var(--a-bg);
+  color: var(--a-text-1);
+  color-scheme: dark;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'ss01', 'tnum';
+}
+
+.admin-shell ::selection {
+  background: rgba(124, 119, 255, 0.35);
+  color: #fff;
+}
+
+.admin-shell *:focus-visible {
+  outline: 2px solid rgba(124, 119, 255, 0.55);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Light dotted backdrop used behind hero strips */
+.admin-shell .a-grid {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.admin-shell .a-scan {
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 2px,
+      rgba(255, 255, 255, 0.012) 2px,
+      rgba(255, 255, 255, 0.012) 3px
+    );
+}
+
+/* Scrollbars */
+.admin-shell ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.admin-shell ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.admin-shell ::-webkit-scrollbar-thumb {
+  background: var(--a-line-3);
+  border-radius: 4px;
+}
+.admin-shell ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* =============================================================================
+   OnSig — global stylesheet
+   - Premium reset (typography features, scrollbars, focus ring, selection)
+   - Legacy class names refreshed to the new design system (.btn-*, .card,
+     .input, .badge) so already-built pages adopt the new look automatically.
+   - Utility helpers (.surface, .hairline, .grid-bg, etc.) for ad-hoc layout.
+   ============================================================================= */
+
+@layer base {
+  :root {
+    --shadow-line: inset 0 0 0 1px rgba(11, 15, 27, 0.06);
+    --shadow-line-strong: inset 0 0 0 1px rgba(11, 15, 27, 0.1);
+    --selection: rgba(94, 85, 229, 0.18);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    font-feature-settings: 'ss01', 'cv02', 'cv03', 'cv04', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply text-ink-12 antialiased;
+    /* Raw CSS instead of @apply to avoid hard-failing the build if Tailwind
+       cannot resolve `bg-ink-1` / `bg-surface` due to JIT cache invalidation. */
+    background-color: #FBFBFD;
+    background-image:
+      radial-gradient(1200px 600px at -10% -20%, rgba(94, 85, 229, 0.05), transparent 60%),
+      radial-gradient(800px 400px at 110% -10%, rgba(11, 15, 27, 0.04), transparent 60%);
+    background-attachment: fixed;
+  }
+
+  /* Native selection accent */
+  ::selection {
+    background: var(--selection);
+    color: theme('colors.ink.12');
+  }
+
+  /* Subtle scrollbars (WebKit) */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: rgba(11, 15, 27, 0.18);
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(11, 15, 27, 0.28);
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-iris-9/40 ring-offset-2 ring-offset-paper;
+    border-radius: 6px;
+  }
+
+  /* Headings inherit display family + tight tracking by default */
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display tracking-tightest;
+    color: theme('colors.ink.12');
+  }
+}
+
+/* =============================================================================
+   Component layer — building blocks shared across the app
+   ============================================================================= */
+@layer components {
+  /* ── Buttons ─────────────────────────────────────────────────────────── */
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5
+           h-9 px-3.5 rounded-md text-[13px] font-semibold tracking-tight
+           transition-all duration-180 ease-emphasized
+           select-none whitespace-nowrap
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-iris-9/40
+           focus-visible:ring-offset-2 focus-visible:ring-offset-paper
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none;
+  }
+
+  .btn-primary {
+    @apply btn text-white
+           bg-gradient-to-b from-iris-8 to-iris-10
+           shadow-[0_1px_0_rgba(255,255,255,0.15)_inset,0_1px_2px_rgba(11,15,27,0.18),0_4px_12px_rgba(94,85,229,0.25)]
+           hover:from-iris-7 hover:to-iris-9 hover:shadow-[0_1px_0_rgba(255,255,255,0.18)_inset,0_2px_4px_rgba(11,15,27,0.16),0_8px_24px_rgba(94,85,229,0.30)]
+           active:scale-[0.985] active:from-iris-9 active:to-iris-10;
+  }
+
+  .btn-secondary {
+    @apply btn text-ink-11 bg-paper
+           shadow-ring hover:shadow-ring-strong
+           hover:bg-ink-1 hover:text-ink-12
+           active:scale-[0.985];
+  }
+
+  .btn-ghost {
+    @apply btn text-ink-9 bg-transparent
+           hover:bg-ink-2 hover:text-ink-12
+           active:bg-ink-3;
+  }
+
+  .btn-danger {
+    @apply btn text-danger-deep bg-danger-soft
+           shadow-[inset_0_0_0_1px_rgba(239,68,68,0.22)]
+           hover:bg-[#fde0e0] hover:shadow-[inset_0_0_0_1px_rgba(239,68,68,0.32)]
+           active:scale-[0.985];
+  }
+
+  .btn-dark {
+    @apply btn text-paper bg-ink-12
+           shadow-[0_1px_0_rgba(255,255,255,0.10)_inset,0_1px_2px_rgba(11,15,27,0.30)]
+           hover:bg-ink-11
+           active:scale-[0.985];
+  }
+
+  .btn-sm {
+    @apply h-7 px-2.5 text-[12px] rounded;
+  }
+
+  .btn-lg {
+    @apply h-11 px-5 text-sm rounded-lg;
+  }
+
+  /* ── Cards ────────────────────────────────────────────────────────────── */
+  .card {
+    @apply bg-paper rounded-card border border-divider p-5
+           shadow-sm transition-shadow duration-180 ease-emphasized;
+  }
+
+  .card-elevated {
+    @apply card shadow-md;
+  }
+
+  .card-interactive {
+    @apply card cursor-pointer
+           hover:-translate-y-0.5 hover:shadow-md
+           transition-all duration-220 ease-emphasized
+           hover:border-divider-strong;
+  }
+
+  .card-flush {
+    @apply card !p-0 overflow-hidden;
+  }
+
+  .card-glass {
+    @apply rounded-card border border-white/40 p-5 shadow-sm
+           bg-white/70 backdrop-blur-glass;
+  }
+
+  /* ── Inputs ───────────────────────────────────────────────────────────── */
+  .input {
+    @apply w-full h-10 px-3 rounded-md
+           text-sm text-ink-12 bg-paper
+           border border-divider-strong
+           placeholder:text-ink-7
+           shadow-xs
+           transition-shadow duration-180 ease-emphasized
+           focus:outline-none focus:border-iris-9 focus:shadow-glow
+           disabled:bg-ink-2 disabled:text-ink-7;
+  }
+  textarea.input {
+    @apply h-auto py-2.5 leading-relaxed;
+  }
+  select.input {
+    @apply pr-9;
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 12 12' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3 4.5l3 3 3-3' stroke='%237D8294' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 12px 12px;
+    appearance: none;
+  }
+
+  /* ── Badges (legacy convenience class — prefer <Badge /> primitive) ──── */
+  .badge {
+    @apply inline-flex items-center gap-1 px-1.5 h-5
+           rounded-full text-[11px] font-semibold
+           bg-ink-2 text-ink-10;
+  }
+  .badge-success {
+    @apply badge bg-success-soft text-success-deep;
+  }
+  .badge-warning {
+    @apply badge bg-warning-soft text-warning-deep;
+  }
+  .badge-danger {
+    @apply badge bg-danger-soft text-danger-deep;
+  }
+  .badge-info {
+    @apply badge bg-info-soft text-info-deep;
+  }
+  .badge-iris {
+    @apply badge bg-iris-2 text-iris-11;
+  }
+
+  /* ── Section heading ─────────────────────────────────────────────────── */
+  .section-title {
+    @apply font-display text-base font-semibold tracking-tight text-ink-12;
+  }
+  .section-overline {
+    @apply text-2xs uppercase tracking-[0.16em] font-semibold text-ink-7;
+  }
+
+  /* ── Hairlines / dividers ────────────────────────────────────────────── */
+  .hairline {
+    @apply border-b border-divider;
+  }
+  .hairline-strong {
+    @apply border-b border-divider-strong;
+  }
+
+  /* ── Surface helpers ─────────────────────────────────────────────────── */
+  .surface-line {
+    box-shadow: var(--shadow-line);
+  }
+  .surface-line-strong {
+    box-shadow: var(--shadow-line-strong);
+  }
+
+  /* ── Sözleşme gövdesi: yasal okuma tipografisi ────────────────────────── */
+  .contract-body {
+    font-family: 'Source Serif Pro', 'Source Serif', 'Charter', 'Georgia',
+      'Iowan Old Style', 'Apple Garamond', serif;
+    font-size: 14px;
+    line-height: 1.75;
+    color: theme('colors.ink.12');
+    white-space: pre-wrap;
+    word-break: break-word;
+    letter-spacing: 0.005em;
+  }
+  .contract-body strong,
+  .contract-body b {
+    font-weight: 700;
+  }
+}
+
+/* =============================================================================
+   Utility layer — bespoke helpers
+   ============================================================================= */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  .num {
+    font-feature-settings: 'tnum' on, 'lnum' on;
+  }
+
+  .grid-bg {
+    background-image: theme('backgroundImage.grid-faint');
+    background-size: theme('backgroundSize.grid-md');
+  }
+  .dotted-bg {
+    background-image: theme('backgroundImage.dotted-faint');
+    background-size: theme('backgroundSize.dotted-md');
+  }
+}

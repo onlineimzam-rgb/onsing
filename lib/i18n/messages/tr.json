@@ -1,0 +1,254 @@
+{
+  "metadata": {
+    "title": "Çandarlı Uzman Gayrimenkul | Yatırımlarınıza Değer Katar",
+    "description": "Çandarlı, Dikili ve İzmir bölgesinde satılık, kiralık daire, villa, arsa ve yatırımlık gayrimenkuller. 30+ yıllık tecrübe ile hayalinizdeki mülkü bulun.",
+    "keywords": "Çandarlı emlak, Dikili gayrimenkul, Çandarlı satılık, Çandarlı kiralık, İzmir yazlık, Çandarlı arsa, Bademli yazlık, Yunanistan yatırım"
+  },
+  "nav": {
+    "home": "Ana Sayfa",
+    "properties": "Portföy",
+    "services": "Hizmetlerimiz",
+    "valuation": "Mülk Değerleme",
+    "blog": "Blog",
+    "gallery": "Galeri",
+    "about": "Hakkımızda",
+    "contact": "İletişim",
+    "phone": "Bizi Ara",
+    "list_property": "Mülk Arıyorum"
+  },
+  "hero": {
+    "eyebrow": "Çandarlı · Dikili · İzmir · Türkiye",
+    "title_pre": "Hayalinizdeki",
+    "title_highlight": "yatırımı",
+    "title_post": "biz buluyoruz",
+    "subtitle": "30+ yıllık bölge deneyimimizle Çandarlı sahili, Dikili ve çevre köylerde sizin için en doğru mülkü buluyor, satışından sonrasına kadar yanınızda oluyoruz.",
+    "cta_browse": "Portföyü Gör",
+    "cta_contact": "Bize Ulaşın",
+    "cta_valuation": "Mülkünüzün Değerini Öğrenin",
+    "search_placeholder": "Bölge, oda sayısı veya referans ara...",
+    "filter_type": "İlan Türü",
+    "filter_category": "Mülk Tipi",
+    "filter_district": "Bölge",
+    "search_button": "Ara"
+  },
+  "property_type": {
+    "all": "Tümü",
+    "satilik": "Satılık",
+    "kiralik": "Kiralık",
+    "gunluk-kiralik": "Günlük Kiralık"
+  },
+  "property_category": {
+    "daire": "Daire",
+    "villa": "Villa",
+    "mustakil-ev": "Müstakil Ev",
+    "yazlik": "Yazlık",
+    "rezidans": "Rezidans",
+    "is-yeri": "İş Yeri",
+    "ofis": "Ofis",
+    "dukkan": "Dükkân",
+    "arsa": "Arsa",
+    "tarla": "Tarla",
+    "bag-bahce": "Bağ-Bahçe",
+    "turistik-tesis": "Turistik Tesis"
+  },
+  "property_status": {
+    "aktif": "Aktif",
+    "satildi": "Satıldı",
+    "kiralandi": "Kiralandı",
+    "rezerve": "Rezerve",
+    "pasif": "Pasif"
+  },
+  "trust": {
+    "experience": "30+ Yıl Tecrübe",
+    "experience_sub": "Bölgede güvenilir tek isim",
+    "portfolio": "500+ Mülk",
+    "portfolio_sub": "Geniş ve güncel portföy",
+    "international": "Yabancıya Satış",
+    "international_sub": "Avrupa'lı yatırımcı ağı",
+    "valuation": "Ücretsiz Değerleme",
+    "valuation_sub": "Profesyonel raporlama"
+  },
+  "services": {
+    "eyebrow": "Hizmetlerimiz",
+    "title": "Sadece emlak değil, çözüm sunuyoruz",
+    "subtitle": "Alım, satım, kiralama, değerleme ve yatırım danışmanlığında uçtan uca destek.",
+    "buy": {
+      "title": "Mülk Alımı",
+      "desc": "Bölgedeki en iyi fırsatları size özel filtreleyip sunuyoruz."
+    },
+    "sell": {
+      "title": "Mülk Satışı",
+      "desc": "Profesyonel pazarlama, profesyonel fotoğraf ve geniş alıcı ağı."
+    },
+    "rent": {
+      "title": "Kiralama",
+      "desc": "Kısa ve uzun dönem kiralama, kiracı bulma ve sözleşme yönetimi."
+    },
+    "valuation": {
+      "title": "Mülk Değerleme",
+      "desc": "Bölge dinamiklerine ve güncel piyasaya göre tarafsız değerleme."
+    },
+    "investment": {
+      "title": "Yatırım Danışmanlığı",
+      "desc": "Türkiye + Yunanistan'da yatırımlık fırsatlar, yıllık getirim raporu."
+    },
+    "foreign": {
+      "title": "Yabancıya Satış",
+      "desc": "Tapu, oturma izni ve döviz prosedürlerinde tam rehberlik."
+    }
+  },
+  "featured": {
+    "eyebrow": "Öne Çıkan Portföy",
+    "title": "Bu hafta seçtiklerimiz",
+    "subtitle": "Bölgenin en iyi konumlarındaki, kaçırılmaması gereken fırsatlar.",
+    "cta_all": "Tüm Portföyü Gör"
+  },
+  "property": {
+    "ref": "Referans",
+    "price": "Fiyat",
+    "ask_price": "Fiyat sorunuz",
+    "rooms": "Oda",
+    "bathrooms": "Banyo",
+    "area": "Net m²",
+    "lot_area": "Arsa m²",
+    "floor": "Kat",
+    "building_age": "Bina Yaşı",
+    "heating": "Isıtma",
+    "features": "Özellikler",
+    "description": "Açıklama",
+    "location": "Konum",
+    "share": "Paylaş",
+    "save": "Kaydet",
+    "contact_agent": "Bu Mülk Hakkında Bilgi Al",
+    "schedule_visit": "Yerinde Görmek İstiyorum",
+    "similar": "Benzer Mülkler",
+    "back_to_list": "Tüm portföye dön",
+    "no_results": "Aramanıza uygun mülk bulunamadı.",
+    "results_count": "{count} sonuç bulundu"
+  },
+  "lead_form": {
+    "eyebrow": "Portföy Toplama",
+    "title": "Aradığınız mülk listede yoksa?",
+    "subtitle": "İhtiyaçlarınızı bize anlatın, yeni gelen ilanlarda size öncelikli haber verelim.",
+    "buyer_tab": "Mülk arıyorum",
+    "seller_tab": "Mülküm var, satmak istiyorum",
+    "name": "Ad Soyad",
+    "phone": "Telefon",
+    "email": "E-posta",
+    "type": "İlan Türü",
+    "category": "Mülk Tipi",
+    "district": "Bölge",
+    "budget_min": "Bütçe (alt)",
+    "budget_max": "Bütçe (üst)",
+    "rooms": "Oda Sayısı",
+    "area_min": "Min. m²",
+    "message": "Notunuz / Özel İstekler",
+    "submit_buyer": "Aradığım Mülkü Bulun",
+    "submit_seller": "Mülkümü Değerlendirin",
+    "success": "Talebiniz alındı. En kısa sürede size dönüş yapacağız.",
+    "error": "Bir hata oluştu, lütfen telefonla ulaşın."
+  },
+  "valuation": {
+    "eyebrow": "Mülk Değerleme",
+    "title": "Mülkünüzün gerçek değerini öğrenin",
+    "subtitle": "Bölge tecrübemize ve güncel piyasa verilerine dayanan, ücretsiz ve tarafsız değerleme.",
+    "form_title": "Değerleme Talep Formu",
+    "name": "Ad Soyad",
+    "phone": "Telefon",
+    "email": "E-posta",
+    "address": "Mülkün Adresi",
+    "type": "Mülk Tipi",
+    "area": "Net m²",
+    "lot_area": "Arsa m² (varsa)",
+    "year_built": "Yapım Yılı",
+    "rooms": "Oda Sayısı",
+    "notes": "Mülk hakkında ek bilgi",
+    "submit": "Değerleme Talep Et",
+    "success": "Talebiniz alındı. En geç 48 saat içinde uzmanımız size dönüş yapacak.",
+    "info_title": "Nasıl Çalışıyor?",
+    "step_1": "Formu doldurun, mülk bilgilerinizi paylaşın.",
+    "step_2": "Uzmanımız sizinle iletişime geçer, gerekirse yerinde inceleme yapar.",
+    "step_3": "48 saat içinde detaylı değerleme raporunuzu e-posta ile alırsınız.",
+    "step_4": "İsterseniz satış / kiralama sürecinde de yanınızda oluruz."
+  },
+  "blog": {
+    "eyebrow": "Blog",
+    "title": "Gayrimenkulün Nabzı",
+    "subtitle": "Bölge piyasası, yatırım rehberleri, tapu işlemleri ve daha fazlası.",
+    "read_more": "Devamını oku",
+    "min_read": "dk okuma",
+    "related": "İlgili Yazılar",
+    "no_posts": "Henüz blog yazısı yok."
+  },
+  "gallery": {
+    "eyebrow": "Galeri",
+    "title": "Bölgemizden Kareler",
+    "subtitle": "Çandarlı, Dikili ve çevresindeki rüya konumlardan.",
+    "all": "Tümü",
+    "empty": "Henüz görsel yok."
+  },
+  "about": {
+    "eyebrow": "Hakkımızda",
+    "title": "Bölgenin Uzmanı, Sizin Yanınızda",
+    "p1": "Çandarlı Uzman Gayrimenkul olarak, Çandarlı sahili, Dikili ve çevre köylerde 30+ yıllık deneyimimizle hizmet veriyoruz. Yerel olmak demek; her sokağı, her arsayı ve her bölgenin gelecek potansiyelini bilmek demek.",
+    "p2": "Sadece bir alıcı / satıcı eşleştirmenin ötesinde, müşterilerimizin yatırımına gerçekten değer katacak fırsatları sunuyoruz. Yabancı yatırımcıdan emekliliğine yazlık arayan aileye, ofis arayan yatırımcıdan tarla satıcısına kadar her ihtiyaç için tek adres olmayı hedefliyoruz.",
+    "values_title": "Değerlerimiz",
+    "value_trust": "Güven",
+    "value_trust_desc": "Tapuya kadar şeffaflık ve dürüstlük.",
+    "value_local": "Yerel Bilgi",
+    "value_local_desc": "Bölgeyi sokak sokak biliyoruz.",
+    "value_service": "Tam Hizmet",
+    "value_service_desc": "Alımdan tapuya, kiralamadan değerlemeye uçtan uca.",
+    "value_network": "Geniş Ağ",
+    "value_network_desc": "Yerli + yabancı yatırımcı portföyü."
+  },
+  "contact": {
+    "eyebrow": "İletişim",
+    "title": "Bize Ulaşın",
+    "subtitle": "Sorularınız, ilanlarınız ve yatırım planlarınız için her zaman buradayız.",
+    "phone": "Telefon",
+    "phone_value": "0 507 487 59 89",
+    "whatsapp": "WhatsApp",
+    "whatsapp_value": "0 507 487 59 89",
+    "email": "E-posta",
+    "email_value": "info@candarliuzmangm.com.tr",
+    "address": "Adres",
+    "address_value": "Çandarlı Mah. Hürriyet Meydanı No:30/A, Dikili / İzmir",
+    "working_hours": "Çalışma Saatleri",
+    "directions": "Yol Tarifi Al",
+    "instagram": "Instagram",
+    "form_title": "Mesaj Bırakın",
+    "form_name": "Ad Soyad",
+    "form_phone": "Telefon",
+    "form_email": "E-posta",
+    "form_subject": "Konu",
+    "form_message": "Mesajınız",
+    "form_submit": "Gönder",
+    "form_success": "Mesajınız iletildi, kısa süre içinde dönüş yapacağız.",
+    "form_error": "Bir hata oluştu, lütfen telefonla ulaşın."
+  },
+  "footer": {
+    "tagline": "Çandarlı, Dikili ve İzmir bölgesinde gayrimenkul alım-satım, kiralama ve değerlemede uzman çözüm ortağınız.",
+    "quick_links": "Hızlı Erişim",
+    "services_title": "Hizmetler",
+    "contact_info": "İletişim",
+    "service_areas": "Hizmet Bölgelerimiz",
+    "rights": "Tüm hakları saklıdır.",
+    "privacy": "Gizlilik Politikası",
+    "kvkk": "KVKK Aydınlatma Metni",
+    "terms": "Kullanım Koşulları"
+  },
+  "common": {
+    "loading": "Yükleniyor...",
+    "view_all": "Tümünü Gör",
+    "more_info": "Detaylı Bilgi",
+    "search": "Ara",
+    "filter": "Filtrele",
+    "clear": "Temizle",
+    "select": "Seçiniz",
+    "from": "den",
+    "to": "e",
+    "currency_try": "TL",
+    "currency_eur": "EUR"
+  }
+}

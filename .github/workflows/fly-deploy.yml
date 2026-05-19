@@ -1,0 +1,129 @@
+# =============================================================================
+# OnSig — Fly.io continuous deployment
+# =============================================================================
+#
+# Every push to `main` that touches the backend or its infra deploys a new
+# revision. The pipeline:
+#
+#   1. validate  — npm ci + tsc + next lint (lint failures DO NOT block)
+#   2. deploy    — flyctl deploy → builds remotely on Fly's builder, no local
+#                  docker required; release_command (db:migrate) runs first
+#   3. smoke     — hits /api/health/live and /api/health on the public URL
+#
+# Required GitHub secrets (Settings → Secrets and variables → Actions):
+#   - FLY_API_TOKEN              `flyctl auth token`
+#   - POSTGRES_URL_NON_POOLING   Neon direct URL (for the migrate step)
+#
+# Note: we don't push secrets through Actions — they live on Fly itself. CI
+# only needs the API token to trigger deploys.
+
+name: Deploy to Fly.io
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'onsig/backend/**'
+      - 'onsig/shared/**'
+      - 'onsig/fly.toml'
+      - 'onsig/Dockerfile'
+      - 'onsig/.dockerignore'
+      - '.github/workflows/fly-deploy.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: fly-prod
+  cancel-in-progress: false
+
+jobs:
+  # ─── 1. validate ──────────────────────────────────────────────────────────
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: onsig/backend/package-lock.json
+      - name: npm ci
+        run: npm ci
+        working-directory: onsig/backend
+      - name: Type-check
+        run: npm run type-check
+        working-directory: onsig/backend
+      - name: Lint (non-blocking)
+        run: npm run lint || true
+        working-directory: onsig/backend
+
+  # ─── 2. deploy ────────────────────────────────────────────────────────────
+  deploy:
+    name: Deploy to Fly.io
+    runs-on: ubuntu-latest
+    needs: validate
+    environment: production
+    concurrency:
+      group: fly-deploy
+      cancel-in-progress: false
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      # fly.toml + Dockerfile live in onsig/ (monorepo root for the build context
+      # so both backend/ and shared/ are reachable). release_command runs
+      # `npm run db:migrate` inside the new image against POSTGRES_URL_NON_POOLING,
+      # which is set as a Fly secret (not surfaced through Actions).
+      - name: Deploy
+        working-directory: onsig
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          echo "Deploying onsig-prod from ${GITHUB_SHA::8}"
+          flyctl deploy --remote-only \
+            --build-arg COMMIT_SHA="${GITHUB_SHA}" \
+            --strategy rolling
+
+      - name: Fetch app URL
+        id: app
+        working-directory: onsig
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          URL=$(flyctl status --json | jq -r '.Hostname')
+          echo "url=https://${URL}" >> "$GITHUB_OUTPUT"
+
+      - name: Summary
+        run: |
+          echo "::notice title=Deployed::https://${{ steps.app.outputs.url }}"
+
+  # ─── 3. smoke ─────────────────────────────────────────────────────────────
+  smoke:
+    name: Production smoke
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Run smoke probes
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          HOST=$(cd onsig && flyctl status --json | jq -r '.Hostname')
+          # Fly takes a few seconds for the new machine to enter rotation.
+          for i in 1 2 3 4 5; do
+            if curl -sf "https://${HOST}/api/health/live" >/dev/null; then
+              echo "Live ✓ after ${i} attempts"; break
+            fi
+            echo "  attempt ${i} not yet live"; sleep 6
+            [ "${i}" = "5" ] && exit 1
+          done
+          node onsig/backend/scripts/smoke-prod.mjs "https://${HOST}"

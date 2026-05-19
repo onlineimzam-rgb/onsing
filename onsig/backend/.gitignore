@@ -1,0 +1,14 @@
+node_modules/
+.next/
+.env
+.env.local
+.env*.local
+*.log
+.DS_Store
+.vercel
+drizzle/migrations/.snapshot*
+
+dev.log
+db-push.log
+
+storage/

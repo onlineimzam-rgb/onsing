@@ -1,0 +1,32 @@
+node_modules
+.next
+out
+build
+dist
+coverage
+
+# Local env (never commit)
+.env
+.env.local
+.env.*.local
+.env*.local
+.env.production
+.env.production.local
+
+# Editor / OS
+.vercel
+.DS_Store
+Thumbs.db
+*.tsbuildinfo
+next-env.d.ts
+.eslintcache
+
+# Logs + transient
+*.log
+fly-deploy.log
+devnew.log
+dev.log
+
+# Local-only dev scripts (utility one-shots, contain placeholder admin emails)
+onsig/backend/scripts/_*.mjs
+onsig/backend/scripts/_*.js

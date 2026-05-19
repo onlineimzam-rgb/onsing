@@ -1,0 +1,197 @@
+# =============================================================================
+# OnSig — Azure DevOps pipeline
+# =============================================================================
+#
+# Stages:
+#   1. validate   — lint + type-check + (cheap) unit smoke
+#   2. build      — docker build + push to ACR with the commit SHA + `latest`
+#   3. migrate    — drizzle-kit migrate against POSTGRES_URL_NON_POOLING
+#   4. deploy     — flip Container App revision to the new image
+#   5. smoke      — hit /api/health/live on the public URL, fail the pipeline
+#                   if anything is off
+#
+# The first three stages run in parallel where possible; migrate gates deploy.
+#
+# Required pipeline variables (Library → Variable Group "onsig-prod"):
+#   - AZURE_SERVICE_CONNECTION         (Service connection name)
+#   - AZURE_RESOURCE_GROUP             onsig-prod
+#   - AZURE_CONTAINER_APP_NAME         onsig-prod-web
+#   - AZURE_ACR_NAME                   onsigprodacr
+#   - AZURE_KEY_VAULT_NAME             onsig-prod-kv
+#   - POSTGRES_URL_NON_POOLING         (secret — Neon direct URL for migrations)
+#
+# Required secret variables (also in library, marked "secret"):
+#   - POSTGRES_URL_NON_POOLING
+# =============================================================================
+
+trigger:
+  branches:
+    include: [main]
+  paths:
+    include:
+      - onsig/backend/**
+      - onsig/infra/**
+
+pr: none
+
+variables:
+  - group: onsig-prod
+  - name: imageRepo
+    value: onsig-web
+  - name: workingDir
+    value: onsig/backend
+  - name: imageTag
+    value: $(Build.SourceVersion)
+  - name: imageTagLatest
+    value: latest
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+  # ─── 1. validate ────────────────────────────────────────────────────────────
+  - stage: validate
+    displayName: Validate
+    jobs:
+      - job: typecheck_lint
+        displayName: Type-check + lint
+        steps:
+          - task: NodeTool@0
+            inputs: { versionSpec: '20.x' }
+          - script: npm ci
+            displayName: npm ci
+            workingDirectory: $(workingDir)
+          - script: npm run type-check
+            displayName: tsc --noEmit
+            workingDirectory: $(workingDir)
+          - script: npm run lint
+            displayName: next lint
+            workingDirectory: $(workingDir)
+            continueOnError: true  # Lint warnings don't block release.
+
+  # ─── 2. build & push image ──────────────────────────────────────────────────
+  - stage: build
+    displayName: Build & push image
+    dependsOn: validate
+    condition: succeeded()
+    jobs:
+      - job: docker_build
+        displayName: Docker build → ACR
+        steps:
+          - task: AzureCLI@2
+            displayName: Build + push to $(AZURE_ACR_NAME)
+            inputs:
+              azureSubscription: $(AZURE_SERVICE_CONNECTION)
+              scriptType: bash
+              scriptLocation: inlineScript
+              workingDirectory: $(workingDir)
+              inlineScript: |
+                set -euo pipefail
+                az acr login --name "$AZURE_ACR_NAME"
+                REGISTRY="$(az acr show -n "$AZURE_ACR_NAME" --query loginServer -o tsv)"
+
+                echo "Building $REGISTRY/$(imageRepo):$(imageTag)"
+                docker build \
+                  --tag "$REGISTRY/$(imageRepo):$(imageTag)" \
+                  --tag "$REGISTRY/$(imageRepo):$(imageTagLatest)" \
+                  .
+
+                docker push "$REGISTRY/$(imageRepo):$(imageTag)"
+                docker push "$REGISTRY/$(imageRepo):$(imageTagLatest)"
+
+                echo "##vso[task.setvariable variable=fullImage;isOutput=true]$REGISTRY/$(imageRepo):$(imageTag)"
+            name: dockerBuild
+
+  # ─── 3. migrate ─────────────────────────────────────────────────────────────
+  - stage: migrate
+    displayName: Database migrations
+    dependsOn: validate
+    condition: succeeded()
+    jobs:
+      - job: drizzle_migrate
+        displayName: drizzle-kit migrate
+        steps:
+          - task: NodeTool@0
+            inputs: { versionSpec: '20.x' }
+          - script: npm ci
+            displayName: npm ci
+            workingDirectory: $(workingDir)
+          - script: npm run db:migrate
+            displayName: Apply pending migrations
+            workingDirectory: $(workingDir)
+            env:
+              POSTGRES_URL: $(POSTGRES_URL_NON_POOLING)
+              POSTGRES_URL_NON_POOLING: $(POSTGRES_URL_NON_POOLING)
+
+  # ─── 4. deploy ──────────────────────────────────────────────────────────────
+  - stage: deploy
+    displayName: Deploy new revision
+    dependsOn: [build, migrate]
+    condition: succeeded()
+    jobs:
+      - deployment: aca_revision
+        displayName: Container Apps revision swap
+        environment: onsig-prod   # ← create this Environment in DevOps for approvals
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureCLI@2
+                  inputs:
+                    azureSubscription: $(AZURE_SERVICE_CONNECTION)
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      set -euo pipefail
+                      REGISTRY="$(az acr show -n "$AZURE_ACR_NAME" --query loginServer -o tsv)"
+                      IMAGE="$REGISTRY/$(imageRepo):$(imageTag)"
+
+                      echo "Updating $AZURE_CONTAINER_APP_NAME → $IMAGE"
+                      az containerapp update \
+                        --name           "$AZURE_CONTAINER_APP_NAME" \
+                        --resource-group "$AZURE_RESOURCE_GROUP" \
+                        --image          "$IMAGE" \
+                        --revision-suffix "r$(date +%s)"
+
+                      FQDN=$(az containerapp show \
+                        -n "$AZURE_CONTAINER_APP_NAME" \
+                        -g "$AZURE_RESOURCE_GROUP" \
+                        --query properties.configuration.ingress.fqdn -o tsv)
+                      echo "##vso[task.setvariable variable=appFqdn;isOutput=true]$FQDN"
+                  name: deployAca
+
+  # ─── 5. smoke ───────────────────────────────────────────────────────────────
+  - stage: smoke
+    displayName: Smoke
+    dependsOn: deploy
+    condition: succeeded()
+    jobs:
+      - job: hit_live
+        displayName: /api/health/live + version probe
+        steps:
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: $(AZURE_SERVICE_CONNECTION)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                set -euo pipefail
+                FQDN=$(az containerapp show \
+                  -n "$AZURE_CONTAINER_APP_NAME" \
+                  -g "$AZURE_RESOURCE_GROUP" \
+                  --query properties.configuration.ingress.fqdn -o tsv)
+
+                echo "Probing https://$FQDN/api/health/live"
+                for i in 1 2 3 4 5; do
+                  if curl -sf "https://$FQDN/api/health/live" >/dev/null; then
+                    echo "OK — live ($i)"
+                    break
+                  fi
+                  echo "  attempt $i failed, sleeping 8s"
+                  sleep 8
+                  if [ "$i" = "5" ]; then exit 1; fi
+                done
+
+                echo ""
+                echo "Diagnostics (DB + version):"
+                curl -s "https://$FQDN/api/health" | tee /dev/stderr

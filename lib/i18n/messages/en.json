@@ -1,0 +1,254 @@
+{
+  "metadata": {
+    "title": "Çandarlı Uzman Real Estate | We Add Value to Your Investments",
+    "description": "Houses, villas, land and investment properties for sale and rent in Çandarlı, Dikili and the wider İzmir region. 30+ years of local expertise.",
+    "keywords": "Çandarlı real estate, Dikili property, Çandarlı for sale, Aegean coast property, İzmir summer house, Greece investment, Turkey property"
+  },
+  "nav": {
+    "home": "Home",
+    "properties": "Properties",
+    "services": "Services",
+    "valuation": "Valuation",
+    "blog": "Blog",
+    "gallery": "Gallery",
+    "about": "About Us",
+    "contact": "Contact",
+    "phone": "Call Us",
+    "list_property": "Looking for Property"
+  },
+  "hero": {
+    "eyebrow": "Çandarlı · Dikili · İzmir · Türkiye",
+    "title_pre": "We find your",
+    "title_highlight": "dream investment",
+    "title_post": "for you",
+    "subtitle": "With 30+ years of local expertise on the Çandarlı coast, Dikili and surrounding villages, we help you find the right property and stand by you long after the deal is closed.",
+    "cta_browse": "Browse Listings",
+    "cta_contact": "Contact Us",
+    "cta_valuation": "Learn Your Property Value",
+    "search_placeholder": "Search by area, rooms or reference...",
+    "filter_type": "Listing Type",
+    "filter_category": "Property Type",
+    "filter_district": "District",
+    "search_button": "Search"
+  },
+  "property_type": {
+    "all": "All",
+    "satilik": "For Sale",
+    "kiralik": "For Rent",
+    "gunluk-kiralik": "Daily Rental"
+  },
+  "property_category": {
+    "daire": "Apartment",
+    "villa": "Villa",
+    "mustakil-ev": "Detached House",
+    "yazlik": "Summer House",
+    "rezidans": "Residence",
+    "is-yeri": "Commercial",
+    "ofis": "Office",
+    "dukkan": "Shop",
+    "arsa": "Plot",
+    "tarla": "Field",
+    "bag-bahce": "Vineyard / Garden",
+    "turistik-tesis": "Touristic Facility"
+  },
+  "property_status": {
+    "aktif": "Active",
+    "satildi": "Sold",
+    "kiralandi": "Rented",
+    "rezerve": "Reserved",
+    "pasif": "Inactive"
+  },
+  "trust": {
+    "experience": "30+ Years",
+    "experience_sub": "The trusted name in the region",
+    "portfolio": "500+ Properties",
+    "portfolio_sub": "Wide and up-to-date portfolio",
+    "international": "Sales to Foreigners",
+    "international_sub": "European investor network",
+    "valuation": "Free Valuation",
+    "valuation_sub": "Professional reporting"
+  },
+  "services": {
+    "eyebrow": "Our Services",
+    "title": "Not just real estate, we offer solutions",
+    "subtitle": "End-to-end support in buying, selling, renting, valuation and investment consulting.",
+    "buy": {
+      "title": "Buy Property",
+      "desc": "We curate the best opportunities in the region tailored to your needs."
+    },
+    "sell": {
+      "title": "Sell Property",
+      "desc": "Professional marketing, photography and a wide buyer network."
+    },
+    "rent": {
+      "title": "Rentals",
+      "desc": "Short and long-term rentals, tenant matching and contract management."
+    },
+    "valuation": {
+      "title": "Property Valuation",
+      "desc": "Unbiased valuation based on local dynamics and current market data."
+    },
+    "investment": {
+      "title": "Investment Consulting",
+      "desc": "Investment opportunities in Turkey + Greece, annual yield reports."
+    },
+    "foreign": {
+      "title": "Sales to Foreigners",
+      "desc": "Full guidance on title deed, residency and currency procedures."
+    }
+  },
+  "featured": {
+    "eyebrow": "Featured Listings",
+    "title": "Our picks of the week",
+    "subtitle": "Hand-selected opportunities in the best locations of the region.",
+    "cta_all": "See All Listings"
+  },
+  "property": {
+    "ref": "Reference",
+    "price": "Price",
+    "ask_price": "Price on request",
+    "rooms": "Rooms",
+    "bathrooms": "Bath",
+    "area": "Net m²",
+    "lot_area": "Lot m²",
+    "floor": "Floor",
+    "building_age": "Building Age",
+    "heating": "Heating",
+    "features": "Features",
+    "description": "Description",
+    "location": "Location",
+    "share": "Share",
+    "save": "Save",
+    "contact_agent": "Get Info About This Property",
+    "schedule_visit": "I'd Like to Visit",
+    "similar": "Similar Properties",
+    "back_to_list": "Back to all listings",
+    "no_results": "No listings match your search.",
+    "results_count": "{count} results"
+  },
+  "lead_form": {
+    "eyebrow": "Property Matching",
+    "title": "Can't find what you're looking for?",
+    "subtitle": "Tell us your needs, we'll notify you first when matching listings come in.",
+    "buyer_tab": "I'm looking to buy",
+    "seller_tab": "I have a property to sell",
+    "name": "Full Name",
+    "phone": "Phone",
+    "email": "Email",
+    "type": "Listing Type",
+    "category": "Property Type",
+    "district": "District",
+    "budget_min": "Min Budget",
+    "budget_max": "Max Budget",
+    "rooms": "Rooms",
+    "area_min": "Min m²",
+    "message": "Notes / Special Requests",
+    "submit_buyer": "Find My Property",
+    "submit_seller": "Evaluate My Property",
+    "success": "Your request has been received. We'll get back to you shortly.",
+    "error": "Something went wrong, please call us directly."
+  },
+  "valuation": {
+    "eyebrow": "Property Valuation",
+    "title": "Find out the real value of your property",
+    "subtitle": "Free, unbiased valuation based on our local expertise and current market data.",
+    "form_title": "Request Valuation",
+    "name": "Full Name",
+    "phone": "Phone",
+    "email": "Email",
+    "address": "Property Address",
+    "type": "Property Type",
+    "area": "Net m²",
+    "lot_area": "Lot m² (if any)",
+    "year_built": "Year Built",
+    "rooms": "Rooms",
+    "notes": "Additional info",
+    "submit": "Request Valuation",
+    "success": "Request received. Our expert will get back to you within 48 hours.",
+    "info_title": "How It Works",
+    "step_1": "Fill out the form and share your property details.",
+    "step_2": "Our expert reaches out and visits in person if needed.",
+    "step_3": "You receive a detailed valuation report by email within 48 hours.",
+    "step_4": "We can also assist you in the sale or rental process."
+  },
+  "blog": {
+    "eyebrow": "Blog",
+    "title": "Real Estate Pulse",
+    "subtitle": "Local market, investment guides, title deed processes and more.",
+    "read_more": "Read more",
+    "min_read": "min read",
+    "related": "Related Articles",
+    "no_posts": "No blog posts yet."
+  },
+  "gallery": {
+    "eyebrow": "Gallery",
+    "title": "Snapshots from Our Region",
+    "subtitle": "Dream locations from Çandarlı, Dikili and surroundings.",
+    "all": "All",
+    "empty": "No images yet."
+  },
+  "about": {
+    "eyebrow": "About Us",
+    "title": "The Region's Expert, By Your Side",
+    "p1": "At Çandarlı Uzman Real Estate, we have been serving the Çandarlı coast, Dikili and surrounding villages with 30+ years of local expertise. Being local means knowing every street, every parcel, and the future potential of every neighbourhood.",
+    "p2": "Beyond simply matching buyers and sellers, we deliver opportunities that genuinely add value to our clients' investments. From foreign investors to families looking for a retirement summer house, from office hunters to land sellers — we aim to be the single trusted address for every need.",
+    "values_title": "Our Values",
+    "value_trust": "Trust",
+    "value_trust_desc": "Transparency and honesty all the way to the title deed.",
+    "value_local": "Local Knowledge",
+    "value_local_desc": "We know the region street by street.",
+    "value_service": "Full Service",
+    "value_service_desc": "End-to-end from purchase to title to rental.",
+    "value_network": "Wide Network",
+    "value_network_desc": "Domestic + foreign investor portfolio."
+  },
+  "contact": {
+    "eyebrow": "Contact",
+    "title": "Get in Touch",
+    "subtitle": "We're always here for your questions, listings and investment plans.",
+    "phone": "Phone",
+    "phone_value": "+90 507 487 59 89",
+    "whatsapp": "WhatsApp",
+    "whatsapp_value": "+90 507 487 59 89",
+    "email": "Email",
+    "email_value": "info@candarliuzmangm.com.tr",
+    "address": "Address",
+    "address_value": "Hürriyet Square 30/A, Çandarlı, Dikili / İzmir",
+    "working_hours": "Working Hours",
+    "directions": "Get Directions",
+    "instagram": "Instagram",
+    "form_title": "Leave a Message",
+    "form_name": "Full Name",
+    "form_phone": "Phone",
+    "form_email": "Email",
+    "form_subject": "Subject",
+    "form_message": "Your message",
+    "form_submit": "Send",
+    "form_success": "Your message was sent, we'll get back to you shortly.",
+    "form_error": "Something went wrong, please contact us by phone."
+  },
+  "footer": {
+    "tagline": "Your expert solution partner in real estate sales, rentals and valuation in Çandarlı, Dikili and the İzmir region.",
+    "quick_links": "Quick Links",
+    "services_title": "Services",
+    "contact_info": "Contact",
+    "service_areas": "Service Areas",
+    "rights": "All rights reserved.",
+    "privacy": "Privacy Policy",
+    "kvkk": "KVKK Notice",
+    "terms": "Terms of Use"
+  },
+  "common": {
+    "loading": "Loading...",
+    "view_all": "View All",
+    "more_info": "More Info",
+    "search": "Search",
+    "filter": "Filter",
+    "clear": "Clear",
+    "select": "Select",
+    "from": "from",
+    "to": "to",
+    "currency_try": "TRY",
+    "currency_eur": "EUR"
+  }
+}
